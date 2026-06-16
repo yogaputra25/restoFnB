@@ -1,0 +1,12 @@
+DROP TABLE IF EXISTS order_items;
+DROP TABLE IF EXISTS orders;
+DROP TABLE IF EXISTS tables;
+DROP TABLE IF EXISTS branch_availability;
+DROP TABLE IF EXISTS item_variants;
+DROP TABLE IF EXISTS menu_items;
+DROP TABLE IF EXISTS categories;
+DROP TABLE IF EXISTS refresh_tokens;
+DROP TABLE IF EXISTS users;
+DROP TABLE IF EXISTS themes;
+DROP TABLE IF EXISTS branches;
+DROP TABLE IF EXISTS chains;
