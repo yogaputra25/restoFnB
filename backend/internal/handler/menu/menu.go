@@ -185,6 +185,97 @@ func (h *VariantHandler) List(w http.ResponseWriter, r *http.Request) {
 	response.JSON(w, http.StatusOK, variants)
 }
 
+type idRequest struct {
+	ID string `json:"id"`
+}
+
+type categoryUpdateRequest struct {
+	ID           string `json:"id"`
+	Name         string `json:"name"`
+	Description  string `json:"description,omitempty"`
+	DisplayOrder int    `json:"display_order"`
+}
+
+func (h *CategoryHandler) Delete(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		response.Error(w, http.StatusMethodNotAllowed, "method not allowed")
+		return
+	}
+	var req idRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		response.Error(w, http.StatusBadRequest, "invalid JSON")
+		return
+	}
+	if err := h.delete(req.ID); err != nil {
+		response.Error(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	response.JSON(w, http.StatusOK, map[string]string{"message": "deleted"})
+}
+
+func (h *CategoryHandler) Update(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		response.Error(w, http.StatusMethodNotAllowed, "method not allowed")
+		return
+	}
+	var req categoryUpdateRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		response.Error(w, http.StatusBadRequest, "invalid JSON")
+		return
+	}
+	cat, err := h.update(req.ID, req.Name, req.Description, req.DisplayOrder)
+	if err != nil {
+		response.Error(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	response.JSON(w, http.StatusOK, cat)
+}
+
+type menuItemUpdateRequest struct {
+	ID          string  `json:"id"`
+	CategoryID  string  `json:"category_id"`
+	Name        string  `json:"name"`
+	Description string  `json:"description,omitempty"`
+	Price       float64 `json:"price"`
+	ImageURL    string  `json:"image_url,omitempty"`
+	IsAvailable bool    `json:"is_available"`
+}
+
+func (h *MenuItemHandler) Delete(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		response.Error(w, http.StatusMethodNotAllowed, "method not allowed")
+		return
+	}
+	var req idRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		response.Error(w, http.StatusBadRequest, "invalid JSON")
+		return
+	}
+	if err := h.delete(req.ID); err != nil {
+		response.Error(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	response.JSON(w, http.StatusOK, map[string]string{"message": "deleted"})
+}
+
+func (h *MenuItemHandler) Update(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		response.Error(w, http.StatusMethodNotAllowed, "method not allowed")
+		return
+	}
+	var req menuItemUpdateRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		response.Error(w, http.StatusBadRequest, "invalid JSON")
+		return
+	}
+	item, err := h.update(req.ID, req.CategoryID, req.Name, req.Description, req.Price, req.ImageURL, req.IsAvailable)
+	if err != nil {
+		response.Error(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	response.JSON(w, http.StatusOK, item)
+}
+
 type AvailabilityHandler struct {
 	set  func(menuItemID, branchID string, isAvailable bool) (*domain.BranchAvailability, error)
 	get  func(branchID string) ([]domain.BranchAvailability, error)
