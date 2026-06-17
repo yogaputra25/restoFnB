@@ -16,6 +16,7 @@ type MenuItemRepo interface {
 	GetByID(id string) (*domain.MenuItem, error)
 	ListByCategoryID(categoryID string) ([]domain.MenuItem, error)
 	ListByChainID(chainID string) ([]domain.MenuItem, error)
+	ListPublicByChainID(chainID string) ([]domain.MenuItem, error)
 	Update(item *domain.MenuItem) error
 	Delete(id string) error
 }
@@ -100,6 +101,10 @@ func (uc *MenuItemUsecase) Create(chainID, categoryID, name, description string,
 
 func (uc *MenuItemUsecase) ListByChainID(chainID string) ([]domain.MenuItem, error) {
 	return uc.repo.ListByChainID(chainID)
+}
+
+func (uc *MenuItemUsecase) ListPublicByChainID(chainID string) ([]domain.MenuItem, error) {
+	return uc.repo.ListPublicByChainID(chainID)
 }
 
 func (uc *MenuItemUsecase) Update(id, categoryID, name, description string, price float64, imageURL string, isAvailable bool) (*domain.MenuItem, error) {

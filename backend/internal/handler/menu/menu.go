@@ -68,19 +68,21 @@ func (h *CategoryHandler) List(w http.ResponseWriter, r *http.Request) {
 }
 
 type MenuItemHandler struct {
-	create func(chainID, categoryID, name, description string, price float64, imageURL string) (*domain.MenuItem, error)
-	list   func(chainID string) ([]domain.MenuItem, error)
-	update func(id, categoryID, name, description string, price float64, imageURL string, isAvailable bool) (*domain.MenuItem, error)
-	delete func(id string) error
+	create     func(chainID, categoryID, name, description string, price float64, imageURL string) (*domain.MenuItem, error)
+	list       func(chainID string) ([]domain.MenuItem, error)
+	listPublic func(chainID string) ([]domain.MenuItem, error)
+	update     func(id, categoryID, name, description string, price float64, imageURL string, isAvailable bool) (*domain.MenuItem, error)
+	delete     func(id string) error
 }
 
 func NewMenuItemHandler(
 	create func(chainID, categoryID, name, description string, price float64, imageURL string) (*domain.MenuItem, error),
 	list func(chainID string) ([]domain.MenuItem, error),
+	listPublic func(chainID string) ([]domain.MenuItem, error),
 	update func(id, categoryID, name, description string, price float64, imageURL string, isAvailable bool) (*domain.MenuItem, error),
 	delete func(id string) error,
 ) *MenuItemHandler {
-	return &MenuItemHandler{create: create, list: list, update: update, delete: delete}
+	return &MenuItemHandler{create: create, list: list, listPublic: listPublic, update: update, delete: delete}
 }
 
 type menuItemRequest struct {
@@ -109,6 +111,24 @@ func (h *MenuItemHandler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	response.JSON(w, http.StatusCreated, item)
+}
+
+func (h *MenuItemHandler) ListPublic(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		response.Error(w, http.StatusMethodNotAllowed, "method not allowed")
+		return
+	}
+	chainID := r.URL.Query().Get("chain_id")
+	if chainID == "" {
+		response.Error(w, http.StatusBadRequest, "chain_id required")
+		return
+	}
+	items, err := h.listPublic(chainID)
+	if err != nil {
+		response.Error(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	response.JSON(w, http.StatusOK, items)
 }
 
 func (h *MenuItemHandler) List(w http.ResponseWriter, r *http.Request) {

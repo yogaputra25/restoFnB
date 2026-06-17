@@ -45,9 +45,10 @@ func Auth(jwtSecret string) func(http.Handler) http.Handler {
 			}
 
 			user := &domain.User{
-				ID:   getStringClaim(claims, "sub"),
-				Email: getStringClaim(claims, "email"),
-				Role: domain.Role(getStringClaim(claims, "role")),
+				ID:      getStringClaim(claims, "sub"),
+				ChainID: getStringClaim(claims, "chain"),
+				Email:   getStringClaim(claims, "email"),
+				Role:    domain.Role(getStringClaim(claims, "role")),
 			}
 
 			ctx := context.WithValue(r.Context(), UserKey, user)

@@ -1,6 +1,6 @@
 <template>
   <div class="min-h-screen bg-gray-50">
-    <PromoCarousel :promos="promos" />
+    <PromoCarousel v-if="promos.length > 0" :promos="promos" />
 
     <div class="lg:flex max-w-7xl mx-auto">
       <div class="flex-1 min-w-0 p-3 sm:p-4 lg:p-6 pb-16 lg:pb-6">
@@ -86,11 +86,7 @@ import type { Promo } from '~/components/PromoCarousel.vue'
 interface Category { id: string; name: string }
 interface MenuItem { id: string; category_id: string; name: string; description: string; price: number; image_url?: string }
 
-const promos = ref<Promo[]>([
-  { title: 'Special Promo', description: 'Diskon 20% semua menu hari ini!', image: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=800&h=300&fit=crop', bgColor: 'bg-gradient-to-r from-orange-500 to-red-500' },
-  { title: 'Happy Hour', description: 'Minuman spesial harga spesial setiap jam 15.00-17.00', image: 'https://images.unsplash.com/photo-1514362545857-3bc16c5c7d1b?w=800&h=300&fit=crop', bgColor: 'bg-gradient-to-r from-purple-500 to-pink-500' },
-  { title: 'Paket Keluarga', description: 'Hemat 30% untuk pembelian 4 menu utama', image: 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=800&h=300&fit=crop', bgColor: 'bg-gradient-to-r from-green-500 to-teal-500' },
-])
+const promos = ref<Promo[]>([])
 
 const route = useRoute()
 const chainId = (route.query.chain_id as string) || ''
@@ -114,10 +110,20 @@ function getCartItem(itemId: string): CartItem | undefined {
 
 async function fetchData() {
   if (!chainId) return
-  const catRes = await $fetch(`/api/categories/list?chain_id=${chainId}`)
+  const [catRes, itemRes, carRes] = await Promise.all([
+    $fetch(`/api/categories/list?chain_id=${chainId}`),
+    $fetch(`/api/menu-items/list?chain_id=${chainId}`),
+    $fetch(`/api/carousel/list?chain_id=${chainId}`).catch(() => ({ data: [] })),
+  ])
   categories.value = (catRes as any).data || []
-  const itemRes = await $fetch(`/api/menu-items/list?chain_id=${chainId}`)
   items.value = (itemRes as any).data || []
+  const slides = (carRes as any).data || (carRes as any) || []
+  promos.value = (Array.isArray(slides) ? slides : []).map((s: any) => ({
+    title: s.title,
+    description: s.description || '',
+    image: s.image_url || undefined,
+    bgColor: s.bg_color ? `bg-gradient-to-r ${s.bg_color}` : undefined,
+  }))
 }
 
 function getItemsByCategory(categoryId: string) {

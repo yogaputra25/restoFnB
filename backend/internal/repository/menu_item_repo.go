@@ -81,6 +81,27 @@ func (r *MenuItemRepo) ListByChainID(chainID string) ([]domain.MenuItem, error) 
 	return items, nil
 }
 
+func (r *MenuItemRepo) ListPublicByChainID(chainID string) ([]domain.MenuItem, error) {
+	rows, err := r.db.Query(
+		`SELECT id, chain_id, category_id, name, description, price, image_url, is_available, created_at, updated_at
+		 FROM menu_items WHERE chain_id = $1 AND is_available = true ORDER BY category_id, name`, chainID,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var items []domain.MenuItem
+	for rows.Next() {
+		var item domain.MenuItem
+		if err := rows.Scan(&item.ID, &item.ChainID, &item.CategoryID, &item.Name, &item.Description, &item.Price, &item.ImageURL, &item.IsAvailable, &item.CreatedAt, &item.UpdatedAt); err != nil {
+			return nil, err
+		}
+		items = append(items, item)
+	}
+	return items, nil
+}
+
 func (r *MenuItemRepo) Update(item *domain.MenuItem) error {
 	item.UpdatedAt = time.Now()
 	_, err := r.db.Exec(

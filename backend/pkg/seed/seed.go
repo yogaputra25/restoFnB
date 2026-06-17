@@ -87,6 +87,8 @@ func Run(db *sql.DB) error {
 
 	seedOrders(orderRepo, chain.ID, branchA.ID, tablesA, nasiGorengID, esTehID)
 
+	seedCarousel(db, chain.ID)
+
 	log.Println("seed complete")
 	return nil
 }
@@ -238,6 +240,28 @@ func seedOrders(repo *repository.OrderRepo, chainID, branchID string, tables []d
 	}
 
 	log.Printf("created 2 sample orders")
+}
+
+func seedCarousel(db *sql.DB, chainID string) {
+	slides := []struct {
+		title, description, imageURL, bgColor string
+		displayOrder                          int
+	}{
+		{"Special Promo", "Diskon 20% semua menu hari ini!", "https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=800&h=300&fit=crop", "from-orange-500 to-red-500", 1},
+		{"Happy Hour", "Minuman spesial harga spesial setiap jam 15.00-17.00", "https://images.unsplash.com/photo-1514362545857-3bc16c5c7d1b?w=800&h=300&fit=crop", "from-purple-500 to-pink-500", 2},
+		{"Paket Keluarga", "Hemat 30% untuk pembelian 4 menu utama", "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=800&h=300&fit=crop", "from-green-500 to-teal-500", 3},
+	}
+	for _, s := range slides {
+		_, err := db.Exec(
+			`INSERT INTO carousel_slides (chain_id, title, description, image_url, bg_color, display_order, is_active)
+			 VALUES ($1, $2, $3, $4, $5, $6, true)`,
+			chainID, s.title, s.description, s.imageURL, s.bgColor, s.displayOrder,
+		)
+		if err != nil {
+			log.Printf("seed carousel slide: %v", err)
+		}
+	}
+	log.Printf("created %d carousel slides", len(slides))
 }
 
 func hashPassword(password string) string {

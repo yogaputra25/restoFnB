@@ -62,6 +62,28 @@ type ItemVariantStore interface {
 	Delete(id string) error
 }
 
+type CarouselSlide struct {
+	ID           string     `json:"id"`
+	ChainID      string     `json:"chain_id"`
+	Title        string     `json:"title"`
+	Description  string     `json:"description,omitempty"`
+	ImageURL     string     `json:"image_url,omitempty"`
+	BgColor      string     `json:"bg_color,omitempty"`
+	DisplayOrder int        `json:"display_order"`
+	IsActive     bool       `json:"is_active"`
+	DeletedAt    *time.Time `json:"deleted_at,omitempty"`
+	CreatedAt    time.Time  `json:"created_at"`
+	UpdatedAt    time.Time  `json:"updated_at"`
+}
+
+type CarouselSlideStore interface {
+	Create(s *CarouselSlide) error
+	ListByChainID(chainID string) ([]CarouselSlide, error)
+	ListPublic(chainID string) ([]CarouselSlide, error)
+	Update(s *CarouselSlide) error
+	SoftDelete(id string) error
+}
+
 type BranchAvailabilityStore interface {
 	Upsert(ba *BranchAvailability) error
 	GetByBranchID(branchID string) ([]BranchAvailability, error)

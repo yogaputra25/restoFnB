@@ -50,7 +50,12 @@
         </select>
         <input v-model="newItem.description" placeholder="Description"
           class="w-full px-3 py-2 rounded bg-dark-700 text-white border border-dark-500 focus:border-primary-500 outline-none text-sm" />
-        <input v-model="newItem.image_url" placeholder="Image URL (optional)"
+        <div class="flex gap-2 items-start">
+          <input type="file" accept="image/png,image/jpeg,image/gif,image/webp" @change="onAddImageSelect"
+            class="flex-1 text-sm text-white file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:bg-primary-500 file:text-white file:text-xs file:font-semibold file:cursor-pointer" />
+          <img v-if="addImagePreview" :src="addImagePreview" class="w-10 h-10 rounded object-cover shrink-0" />
+        </div>
+        <input v-if="!addImagePreview" v-model="newItem.image_url" placeholder="...or paste Image URL"
           class="w-full px-3 py-2 rounded bg-dark-700 text-white border border-dark-500 focus:border-primary-500 outline-none text-sm" />
         <label class="flex items-center gap-2 text-sm text-white">
           <input v-model="newItem.is_available" type="checkbox" class="accent-primary-500" />
@@ -103,7 +108,12 @@
           </select>
           <input v-model="editItemForm.description" placeholder="Description"
             class="w-full px-3 py-2 rounded bg-dark-700 text-white border border-dark-500 focus:border-primary-500 outline-none text-sm" />
-          <input v-model="editItemForm.image_url" placeholder="Image URL"
+          <div class="flex gap-2 items-start">
+            <input type="file" accept="image/png,image/jpeg,image/gif,image/webp" @change="onEditImageSelect"
+              class="flex-1 text-sm text-white file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:bg-primary-500 file:text-white file:text-xs file:font-semibold file:cursor-pointer" />
+            <img v-if="editImagePreview" :src="editImagePreview" class="w-10 h-10 rounded object-cover shrink-0" />
+          </div>
+          <input v-if="!editFileSelected" v-model="editItemForm.image_url" placeholder="Image URL"
             class="w-full px-3 py-2 rounded bg-dark-700 text-white border border-dark-500 focus:border-primary-500 outline-none text-sm" />
           <label class="flex items-center gap-2 text-sm text-white">
             <input v-model="editItemForm.is_available" type="checkbox" class="accent-primary-500" />
@@ -126,7 +136,9 @@ interface Category { id: string; name: string; description?: string; display_ord
 interface MenuItem { id: string; category_id: string; name: string; description?: string; price: number; image_url?: string; is_available: boolean }
 
 const { $api } = useNuxtApp()
+const auth = useAuthStore()
 const toast = useToast()
+const runtimeConfig = useRuntimeConfig()
 
 const newCategoryName = ref('')
 const editingCategoryId = ref<string | null>(null)
@@ -139,6 +151,41 @@ const menuItems = ref<MenuItem[]>([])
 const newItem = ref({ name: '', price: 0, category_id: '', description: '', image_url: '', is_available: true })
 const editItemModal = ref(false)
 const editItemForm = ref<MenuItem>({ id: '', category_id: '', name: '', description: '', price: 0, image_url: '', is_available: true })
+
+const addSelectedFile = ref<File | null>(null)
+const addImagePreview = ref('')
+const editSelectedFile = ref<File | null>(null)
+const editImagePreview = ref('')
+const editFileSelected = computed(() => editSelectedFile.value !== null)
+
+async function uploadImage(file: File): Promise<string> {
+  const formData = new FormData()
+  formData.append('file', file)
+  const res = await $fetch(`/api/upload?chain_id=${auth.user?.chainId}`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${auth.accessToken}` },
+    body: formData,
+  })
+  return (res as any).url || (res as any).data?.url || ''
+}
+
+function onAddImageSelect(e: Event) {
+  const file = (e.target as HTMLInputElement).files?.[0]
+  if (!file) return
+  addSelectedFile.value = file
+  const reader = new FileReader()
+  reader.onload = () => { addImagePreview.value = reader.result as string }
+  reader.readAsDataURL(file)
+}
+
+function onEditImageSelect(e: Event) {
+  const file = (e.target as HTMLInputElement).files?.[0]
+  if (!file) return
+  editSelectedFile.value = file
+  const reader = new FileReader()
+  reader.onload = () => { editImagePreview.value = reader.result as string }
+  reader.readAsDataURL(file)
+}
 
 async function fetchCategories() {
   try {
@@ -211,6 +258,15 @@ async function addMenuItem() {
     toast.show('Name, price, and category are required')
     return
   }
+  let imageUrl = newItem.value.image_url
+  if (addSelectedFile.value) {
+    try {
+      imageUrl = await uploadImage(addSelectedFile.value)
+    } catch {
+      toast.show('Failed to upload image')
+      return
+    }
+  }
   try {
     await $api('/api/admin/menu-items', {
       method: 'POST',
@@ -219,11 +275,13 @@ async function addMenuItem() {
         price: newItem.value.price,
         category_id: newItem.value.category_id,
         description: newItem.value.description,
-        image_url: newItem.value.image_url,
+        image_url: imageUrl,
         is_available: newItem.value.is_available,
       },
     })
     newItem.value = { name: '', price: 0, category_id: '', description: '', image_url: '', is_available: true }
+    addSelectedFile.value = null
+    addImagePreview.value = ''
     await fetchMenuItems()
     toast.show('Menu item added')
   } catch (e: any) {
@@ -237,12 +295,23 @@ function startEditItem(item: MenuItem) {
 }
 
 async function saveItem() {
+  let imageUrl = editItemForm.value.image_url
+  if (editSelectedFile.value) {
+    try {
+      imageUrl = await uploadImage(editSelectedFile.value)
+    } catch {
+      toast.show('Failed to upload image')
+      return
+    }
+  }
   try {
     await $api('/api/admin/menu-items/update', {
       method: 'POST',
-      body: editItemForm.value,
+      body: { ...editItemForm.value, image_url: imageUrl },
     })
     editItemModal.value = false
+    editSelectedFile.value = null
+    editImagePreview.value = ''
     await fetchMenuItems()
     toast.show('Menu item updated')
   } catch (e: any) {
