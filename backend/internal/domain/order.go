@@ -8,6 +8,7 @@ type Order struct {
 	BranchID      string    `json:"branch_id"`
 	TableID       *string   `json:"table_id,omitempty"`
 	CustomerID    *string   `json:"customer_id,omitempty"`
+	CustomerName  string    `json:"customer_name,omitempty"`
 	GuestID       string    `json:"guest_id,omitempty"`
 	OrderType     string    `json:"order_type"`
 	Status        string    `json:"status"`

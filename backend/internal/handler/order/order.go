@@ -9,7 +9,7 @@ import (
 )
 
 type OrderService interface {
-	Create(chainID, branchID, orderType string, tableID, customerID, guestID *string, items []domain.OrderItem) (*domain.Order, error)
+	Create(chainID, branchID, orderType string, tableID, customerID, guestID *string, customerName string, items []domain.OrderItem) (*domain.Order, error)
 	UpdateStatus(id, status string) (*domain.Order, error)
 	Pay(id, method string) (*domain.Order, error)
 	ListByBranchID(branchID string) ([]domain.Order, error)
@@ -25,11 +25,12 @@ func NewHandler(svc OrderService) *Handler {
 }
 
 type createRequest struct {
-	ChainID   string              `json:"chain_id"`
-	BranchID  string              `json:"branch_id"`
-	TableID   *string             `json:"table_id,omitempty"`
-	OrderType string              `json:"order_type"`
-	Items     []orderItemRequest `json:"items"`
+	ChainID      string              `json:"chain_id"`
+	BranchID     string              `json:"branch_id"`
+	TableID      *string             `json:"table_id,omitempty"`
+	OrderType    string              `json:"order_type"`
+	CustomerName string              `json:"customer_name,omitempty"`
+	Items        []orderItemRequest  `json:"items"`
 }
 
 type orderItemRequest struct {
@@ -59,7 +60,7 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 
-	order, err := h.svc.Create(req.ChainID, req.BranchID, req.OrderType, req.TableID, nil, nil, items)
+	order, err := h.svc.Create(req.ChainID, req.BranchID, req.OrderType, req.TableID, nil, nil, req.CustomerName, items)
 	if err != nil {
 		response.Error(w, http.StatusInternalServerError, err.Error())
 		return

@@ -6,17 +6,17 @@ export interface CartItem {
   image_url?: string
 }
 
+const items = ref<CartItem[]>([])
+
+const total = computed(() =>
+  items.value.reduce((sum, item) => sum + item.price * item.quantity, 0)
+)
+
+const itemCount = computed(() =>
+  items.value.reduce((sum, item) => sum + item.quantity, 0)
+)
+
 export function useCart() {
-  const items = ref<CartItem[]>([])
-
-  const total = computed(() =>
-    items.value.reduce((sum, item) => sum + item.price * item.quantity, 0)
-  )
-
-  const itemCount = computed(() =>
-    items.value.reduce((sum, item) => sum + item.quantity, 0)
-  )
-
   function addItem(menuItem: { id: string; name: string; price: number; image_url?: string }) {
     const existing = items.value.find(i => i.id === menuItem.id)
     if (existing) {

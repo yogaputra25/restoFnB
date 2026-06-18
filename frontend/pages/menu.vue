@@ -79,6 +79,7 @@
 </template>
 
 <script setup lang="ts">
+import { unref } from 'vue'
 import { useCart } from '~/composables/useCart'
 import type { CartItem } from '~/composables/useCart'
 import type { Promo } from '~/components/PromoCarousel.vue'
@@ -131,7 +132,7 @@ function getItemsByCategory(categoryId: string) {
 }
 
 function formatPrice(price: number) {
-  return price.toLocaleString('id-ID')
+  return unref(price).toLocaleString('id-ID')
 }
 
 fetchData()

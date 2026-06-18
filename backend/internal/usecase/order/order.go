@@ -32,7 +32,7 @@ func NewUsecase(repo OrderRepo) *Usecase {
 	return &Usecase{repo: repo}
 }
 
-func (uc *Usecase) Create(chainID, branchID, orderType string, tableID, customerID, guestID *string, items []domain.OrderItem) (*domain.Order, error) {
+func (uc *Usecase) Create(chainID, branchID, orderType string, tableID, customerID, guestID *string, customerName string, items []domain.OrderItem) (*domain.Order, error) {
 	var total float64
 	for i := range items {
 		items[i].Subtotal = float64(items[i].Quantity) * items[i].UnitPrice
@@ -45,15 +45,16 @@ func (uc *Usecase) Create(chainID, branchID, orderType string, tableID, customer
 	}
 
 	order := &domain.Order{
-		ChainID:   chainID,
-		BranchID:  branchID,
-		TableID:   tableID,
-		CustomerID: customerID,
-		GuestID:   guestIDStr,
-		OrderType: orderType,
-		Status:    "pending",
-		TotalAmount: total,
-		Items:     items,
+		ChainID:      chainID,
+		BranchID:     branchID,
+		TableID:      tableID,
+		CustomerID:   customerID,
+		GuestID:      guestIDStr,
+		CustomerName: customerName,
+		OrderType:    orderType,
+		Status:       "pending",
+		TotalAmount:  total,
+		Items:        items,
 	}
 
 	if err := uc.repo.Create(order); err != nil {

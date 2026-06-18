@@ -14,6 +14,7 @@ export default defineNuxtConfig({
   },
   routeRules: {
     '/api/**': { proxy: `${apiBase}/api/**` },
+    '/uploads/**': { proxy: `${apiBase}/uploads/**` },
   },
   app: {
     head: {

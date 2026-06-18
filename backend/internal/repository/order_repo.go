@@ -26,11 +26,11 @@ func (r *OrderRepo) Create(order *domain.Order) error {
 	defer tx.Rollback()
 
 	err = tx.QueryRow(
-		`INSERT INTO orders (chain_id, branch_id, table_id, customer_id, guest_id, order_type, status, total_amount)
-		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+		`INSERT INTO orders (chain_id, branch_id, table_id, customer_id, guest_id, customer_name, order_type, status, total_amount)
+		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
 		 RETURNING id, created_at, updated_at`,
 		order.ChainID, order.BranchID, order.TableID, order.CustomerID, order.GuestID,
-		order.OrderType, "pending", order.TotalAmount,
+		order.CustomerName, order.OrderType, "pending", order.TotalAmount,
 	).Scan(&order.ID, &order.CreatedAt, &order.UpdatedAt)
 	if err != nil {
 		return err
@@ -56,10 +56,10 @@ func (r *OrderRepo) Create(order *domain.Order) error {
 func (r *OrderRepo) GetByID(id string) (*domain.Order, error) {
 	o := &domain.Order{}
 	err := r.db.QueryRow(
-		`SELECT id, chain_id, branch_id, table_id, customer_id, guest_id, order_type,
+		`SELECT id, chain_id, branch_id, table_id, customer_id, guest_id, customer_name, order_type,
 		        status, payment_status, payment_method, total_amount, created_at, updated_at
 		 FROM orders WHERE id = $1`, id,
-	).Scan(&o.ID, &o.ChainID, &o.BranchID, &o.TableID, &o.CustomerID, &o.GuestID,
+	).Scan(&o.ID, &o.ChainID, &o.BranchID, &o.TableID, &o.CustomerID, &o.GuestID, &o.CustomerName,
 		&o.OrderType, &o.Status, &o.PaymentStatus, &o.PaymentMethod, &o.TotalAmount, &o.CreatedAt, &o.UpdatedAt)
 	if err != nil {
 		return nil, err
@@ -69,7 +69,7 @@ func (r *OrderRepo) GetByID(id string) (*domain.Order, error) {
 
 func (r *OrderRepo) ListByBranchID(branchID string) ([]domain.Order, error) {
 	rows, err := r.db.Query(
-		`SELECT id, chain_id, branch_id, table_id, customer_id, guest_id, order_type,
+		`SELECT id, chain_id, branch_id, table_id, customer_id, guest_id, customer_name, order_type,
 		        status, payment_status, payment_method, total_amount, created_at, updated_at
 		 FROM orders WHERE branch_id = $1 ORDER BY created_at DESC`, branchID,
 	)
@@ -81,7 +81,7 @@ func (r *OrderRepo) ListByBranchID(branchID string) ([]domain.Order, error) {
 	var orders []domain.Order
 	for rows.Next() {
 		var o domain.Order
-		if err := rows.Scan(&o.ID, &o.ChainID, &o.BranchID, &o.TableID, &o.CustomerID, &o.GuestID,
+		if err := rows.Scan(&o.ID, &o.ChainID, &o.BranchID, &o.TableID, &o.CustomerID, &o.GuestID, &o.CustomerName,
 			&o.OrderType, &o.Status, &o.PaymentStatus, &o.PaymentMethod, &o.TotalAmount, &o.CreatedAt, &o.UpdatedAt); err != nil {
 			return nil, err
 		}
@@ -92,7 +92,7 @@ func (r *OrderRepo) ListByBranchID(branchID string) ([]domain.Order, error) {
 
 func (r *OrderRepo) ListByChainID(chainID string) ([]domain.Order, error) {
 	rows, err := r.db.Query(
-		`SELECT id, chain_id, branch_id, table_id, customer_id, guest_id, order_type,
+		`SELECT id, chain_id, branch_id, table_id, customer_id, guest_id, customer_name, order_type,
 		        status, payment_status, payment_method, total_amount, created_at, updated_at
 		 FROM orders WHERE chain_id = $1 ORDER BY created_at DESC`, chainID,
 	)
@@ -104,7 +104,7 @@ func (r *OrderRepo) ListByChainID(chainID string) ([]domain.Order, error) {
 	var orders []domain.Order
 	for rows.Next() {
 		var o domain.Order
-		if err := rows.Scan(&o.ID, &o.ChainID, &o.BranchID, &o.TableID, &o.CustomerID, &o.GuestID,
+		if err := rows.Scan(&o.ID, &o.ChainID, &o.BranchID, &o.TableID, &o.CustomerID, &o.GuestID, &o.CustomerName,
 			&o.OrderType, &o.Status, &o.PaymentStatus, &o.PaymentMethod, &o.TotalAmount, &o.CreatedAt, &o.UpdatedAt); err != nil {
 			return nil, err
 		}

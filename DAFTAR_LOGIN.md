@@ -4,7 +4,7 @@
 
 | Role | Chain ID | Email | Password |
 |------|----------|-------|----------|
-| Admin | `bcfe86d3-0d20-4136-a981-8b64a41174fc` | `admin@seed.com` | `seed123` |
+| Admin | `bcfe86d3-0d20-4136-a981-8b64a41174fc` | `admin@seed.com` | `belum bisa` |
 | Cashier | `bcfe86d3-0d20-4136-a981-8b64a41174fc` | `cashier@seed.com` | `seed123` |
 
 > Chain ID berubah tiap reset volume. Cek ulang dengan:

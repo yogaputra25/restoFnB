@@ -49,9 +49,9 @@
         <div>
           <label class="text-xs font-medium text-gray-600 block mb-1">Tipe Pesanan</label>
           <div class="flex gap-2">
-            <button @click="orderType = 'dine_in'"
+            <button @click="orderType = 'dine-in'"
               :class="['flex-1 py-2 px-3 rounded-lg text-sm font-medium border transition-colors',
-                orderType === 'dine_in' ? 'bg-primary-500 text-white border-primary-500' : 'bg-white text-gray-600 border-gray-300 hover:border-gray-400']">
+                orderType === 'dine-in' ? 'bg-primary-500 text-white border-primary-500' : 'bg-white text-gray-600 border-gray-300 hover:border-gray-400']">
               Makan di Tempat
             </button>
             <button @click="orderType = 'takeaway'"
@@ -62,7 +62,7 @@
           </div>
         </div>
 
-        <div v-if="orderType === 'dine_in'">
+        <div v-if="orderType === 'dine-in'">
           <label class="text-xs font-medium text-gray-600 block mb-1">Nomor Meja</label>
           <input v-model="tableId"
             :placeholder="tableIdFromUrl || 'Masukkan nomor meja'"
@@ -71,6 +71,14 @@
           <p v-if="tableIdFromUrl && !tableId" class="text-xs text-gray-400 mt-1">
             Terdeteksi dari QR: meja {{ tableIdFromUrl }}
           </p>
+        </div>
+
+        <div>
+          <label class="text-xs font-medium text-gray-600 block mb-1">Nama Pemesan</label>
+          <input v-model="customerName"
+            placeholder="Masukkan nama Anda (opsional)"
+            class="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+          />
         </div>
 
         <div>
@@ -99,6 +107,7 @@
 </template>
 
 <script setup lang="ts">
+import { unref } from 'vue'
 import { useCart } from '~/composables/useCart'
 
 defineProps<{ showClose?: boolean }>()
@@ -115,11 +124,12 @@ const branchIdFromUrl = (route.query.branch_id as string) || ''
 
 const tableId = ref(tableIdFromUrl)
 const branchId = ref(branchIdFromUrl)
-const orderType = ref(tableIdFromUrl ? 'dine_in' : 'takeaway')
+const orderType = ref(tableIdFromUrl ? 'dine-in' : 'takeaway')
+const customerName = ref('')
 const submitting = ref(false)
 
 function formatPrice(price: number) {
-  return price.toLocaleString('id-ID')
+  return unref(price).toLocaleString('id-ID')
 }
 
 async function submitOrder() {
@@ -135,7 +145,7 @@ async function submitOrder() {
     return
   }
 
-  if (orderType.value === 'dine_in' && !actualTableId) {
+  if (orderType.value === 'dine-in' && !actualTableId) {
     toast.show('Harap masukkan nomor meja', 'error')
     submitting.value = false
     return
@@ -145,6 +155,7 @@ async function submitOrder() {
     chain_id: chainId,
     branch_id: actualBranchId,
     order_type: orderType.value,
+    customer_name: customerName.value || undefined,
     items: items.value.map(item => ({
       menu_item_id: item.id,
       quantity: item.quantity,
