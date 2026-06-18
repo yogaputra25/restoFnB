@@ -44,6 +44,27 @@ func (r *TableRepo) ListByBranchID(branchID string) ([]domain.Table, error) {
 	return tables, nil
 }
 
+func (r *TableRepo) Update(id, label string) error {
+	_, err := r.db.Exec(`UPDATE tables SET label=$1 WHERE id=$2`, label, id)
+	return err
+}
+
+func (r *TableRepo) GetBranchByID(id string) (*domain.Branch, error) {
+	b := &domain.Branch{}
+	err := r.db.QueryRow(
+		`SELECT id, chain_id, name FROM branches WHERE id = $1`, id,
+	).Scan(&b.ID, &b.ChainID, &b.Name)
+	if err != nil {
+		return nil, err
+	}
+	return b, nil
+}
+
+func (r *TableRepo) UpdateQrCodeURL(id, url string) error {
+	_, err := r.db.Exec(`UPDATE tables SET qr_code_url=$1 WHERE id=$2`, url, id)
+	return err
+}
+
 func (r *TableRepo) GetByID(id string) (*domain.Table, error) {
 	t := &domain.Table{}
 	err := r.db.QueryRow(

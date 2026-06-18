@@ -51,6 +51,15 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if req.ChainID == "" {
+		response.Error(w, http.StatusBadRequest, "chain_id is required")
+		return
+	}
+	if req.BranchID == "" {
+		response.Error(w, http.StatusBadRequest, "branch_id is required")
+		return
+	}
+
 	var items []domain.OrderItem
 	for _, ir := range req.Items {
 		items = append(items, domain.OrderItem{

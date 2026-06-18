@@ -76,7 +76,7 @@ func main() {
 	menuItemHandler := menu.NewMenuItemHandler(menuItemUc.Create, menuItemUc.ListByChainID, menuItemUc.ListPublicByChainID, menuItemUc.Update, menuItemUc.Delete)
 	variantHandler := menu.NewVariantHandler(variantUc.Create, variantUc.ListByMenuItemID, variantUc.Delete)
 	availabilityHandler := menu.NewAvailabilityHandler(availabilityUc.SetAvailability, availabilityUc.GetByBranchID)
-	tableHandler := qrHandler.NewHandler(tableUc)
+	tableHandler := qrHandler.NewHandler(tableUc, branchRepo)
 	orderHandler := order.NewHandler(orderUc)
 	carouselHandler := handler.NewCarouselHandler(
 		carouselUc.Create, carouselUc.ListByChainID, carouselUc.ListPublic,
@@ -116,6 +116,8 @@ func main() {
 
 	mux.Handle("/api/admin/tables", authMw(adminMw(http.HandlerFunc(tableHandler.Create))))
 	mux.Handle("/api/admin/tables/list", authMw(http.HandlerFunc(tableHandler.List)))
+	mux.Handle("/api/admin/tables/update", authMw(adminMw(http.HandlerFunc(tableHandler.Update))))
+	mux.Handle("/api/admin/tables/regenerate-qr", authMw(adminMw(http.HandlerFunc(tableHandler.RegenerateQr))))
 	mux.Handle("/api/admin/tables/delete", authMw(adminMw(http.HandlerFunc(tableHandler.Delete))))
 
 	mux.Handle("/api/upload", authMw(http.HandlerFunc(handler.UploadHandler)))

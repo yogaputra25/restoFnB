@@ -81,15 +81,18 @@
           />
         </div>
 
-        <div>
+        <div v-if="branchIdFromUrl">
+          <label class="text-xs font-medium text-gray-600 block mb-1">Cabang</label>
+          <div class="px-3 py-2 rounded-lg bg-green-50 border border-green-200 text-green-700 text-sm">
+            {{ branchIdFromUrl }}
+          </div>
+        </div>
+        <div v-else>
           <label class="text-xs font-medium text-gray-600 block mb-1">ID Cabang (Branch)</label>
           <input v-model="branchId"
-            :placeholder="branchIdFromUrl || 'Masukkan ID cabang'"
+            placeholder="Masukkan ID cabang"
             class="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
           />
-          <p v-if="branchIdFromUrl && !branchId" class="text-xs text-gray-400 mt-1">
-            Terdeteksi dari URL: {{ branchIdFromUrl }}
-          </p>
         </div>
       </div>
 
