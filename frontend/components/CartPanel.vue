@@ -119,6 +119,7 @@ defineEmits<{ close: [] }>()
 const cart = useCart()
 const { items, total } = cart
 const route = useRoute()
+const router = useRouter()
 const toast = useToast()
 
 const chainId = (route.query.chain_id as string) || ''
@@ -175,9 +176,15 @@ async function submitOrder() {
       method: 'POST',
       body: payload,
     })
-    const order = res as any
-    toast.show(`Pesanan berhasil! No. Order: ${order.id?.slice(0, 8) || ''}`, 'success')
+    const data = res as any
+    const order = data?.data || data
+    order.items = order.items.map((item: any, i: number) => ({
+      ...item,
+      name: items.value.find(c => c.id === item.menu_item_id)?.name || `Item ${i + 1}`,
+    }))
+    const chainParam = order.chain_id || chainId
     cart.clear()
+    router.push({ path: '/order-success', state: { order }, query: { chain_id: chainParam } })
   } catch (err: any) {
     const msg = err?.data?.message || err?.response?._data?.message || 'Gagal memproses pesanan'
     toast.show(msg, 'error')

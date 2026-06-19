@@ -10,7 +10,7 @@
             <div v-for="item in getItemsByCategory(cat.id)" :key="item.id"
               class="bg-white rounded-xl shadow-sm overflow-hidden flex flex-col hover:shadow-md transition-shadow">
               <div class="h-28 sm:h-32 bg-gray-100 flex items-center justify-center">
-                <img v-if="item.image_url" :src="item.image_url" :alt="item.name" class="w-full h-full object-cover" />
+                <img v-if="item.image_url" :src="item.image_url" :alt="item.name" class="w-full h-full object-contain" />
                 <span v-else class="text-gray-300 text-4xl">🍽</span>
               </div>
               <div class="p-3 flex-1 flex flex-col">

@@ -74,7 +74,7 @@ const filteredOrders = computed(() =>
 
 async function fetchOrders() {
   try {
-    const res = await $api('/api/orders/by-branch')
+    const res = await $api('/api/orders/by-chain')
     orders.value = (res as any).data || []
   } catch (e: any) {
     toast.show(e?.data?.message || 'Failed to load orders')

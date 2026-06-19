@@ -62,6 +62,7 @@ interface MenuItem { id: string; category_id: string; name: string; description:
 interface CartItem { id: string; name: string; price: number; qty: number }
 
 const route = useRoute()
+const chainId = (route.query.chain_id as string) || (route.query.chain as string) || 'demo'
 const branchId = route.query.branch as string || 'demo'
 const tableId = route.query.table as string || ''
 
@@ -71,9 +72,9 @@ const cart = ref<CartItem[]>([])
 const showCart = ref(false)
 
 async function fetchData() {
-  const catRes = await $fetch('/api/admin/categories/list?chain_id=demo')
+  const catRes = await $fetch(`/api/categories/list?chain_id=${chainId}`)
   categories.value = (catRes as any).data || []
-  const itemRes = await $fetch('/api/admin/menu-items/list?chain_id=demo')
+  const itemRes = await $fetch(`/api/menu-items/list?chain_id=${chainId}`)
   items.value = (itemRes as any).data || []
 }
 

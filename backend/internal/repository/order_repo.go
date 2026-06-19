@@ -56,8 +56,11 @@ func (r *OrderRepo) Create(order *domain.Order) error {
 func (r *OrderRepo) GetByID(id string) (*domain.Order, error) {
 	o := &domain.Order{}
 	err := r.db.QueryRow(
-		`SELECT id, chain_id, branch_id, table_id, customer_id, guest_id, customer_name, order_type,
-		        status, payment_status, payment_method, total_amount, created_at, updated_at
+		`SELECT id, chain_id, branch_id, table_id, customer_id,
+		        COALESCE(guest_id, '') as guest_id,
+		        COALESCE(customer_name, '') as customer_name,
+		        order_type, status, payment_status, payment_method,
+		        total_amount, created_at, updated_at
 		 FROM orders WHERE id = $1`, id,
 	).Scan(&o.ID, &o.ChainID, &o.BranchID, &o.TableID, &o.CustomerID, &o.GuestID, &o.CustomerName,
 		&o.OrderType, &o.Status, &o.PaymentStatus, &o.PaymentMethod, &o.TotalAmount, &o.CreatedAt, &o.UpdatedAt)
@@ -69,8 +72,11 @@ func (r *OrderRepo) GetByID(id string) (*domain.Order, error) {
 
 func (r *OrderRepo) ListByBranchID(branchID string) ([]domain.Order, error) {
 	rows, err := r.db.Query(
-		`SELECT id, chain_id, branch_id, table_id, customer_id, guest_id, customer_name, order_type,
-		        status, payment_status, payment_method, total_amount, created_at, updated_at
+		`SELECT id, chain_id, branch_id, table_id, customer_id,
+		        COALESCE(guest_id, '') as guest_id,
+		        COALESCE(customer_name, '') as customer_name,
+		        order_type, status, payment_status, payment_method,
+		        total_amount, created_at, updated_at
 		 FROM orders WHERE branch_id = $1 ORDER BY created_at DESC`, branchID,
 	)
 	if err != nil {
@@ -92,8 +98,11 @@ func (r *OrderRepo) ListByBranchID(branchID string) ([]domain.Order, error) {
 
 func (r *OrderRepo) ListByChainID(chainID string) ([]domain.Order, error) {
 	rows, err := r.db.Query(
-		`SELECT id, chain_id, branch_id, table_id, customer_id, guest_id, customer_name, order_type,
-		        status, payment_status, payment_method, total_amount, created_at, updated_at
+		`SELECT id, chain_id, branch_id, table_id, customer_id,
+		        COALESCE(guest_id, '') as guest_id,
+		        COALESCE(customer_name, '') as customer_name,
+		        order_type, status, payment_status, payment_method,
+		        total_amount, created_at, updated_at
 		 FROM orders WHERE chain_id = $1 ORDER BY created_at DESC`, chainID,
 	)
 	if err != nil {
