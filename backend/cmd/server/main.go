@@ -135,7 +135,7 @@ func main() {
 	mux.Handle("/api/orders/status", authMw(cashierMw(http.HandlerFunc(orderHandler.UpdateStatus))))
 	mux.Handle("/api/orders/pay", authMw(cashierMw(http.HandlerFunc(orderHandler.Pay))))
 	mux.Handle("/api/orders/by-branch", authMw(cashierMw(http.HandlerFunc(orderHandler.ListByBranch))))
-	mux.Handle("/api/orders/by-chain", authMw(adminMw(http.HandlerFunc(orderHandler.ListByChain))))
+	mux.Handle("/api/orders/by-chain", authMw(cashierMw(http.HandlerFunc(orderHandler.ListByChain))))
 
 	uploadPath, uploadHandler := handler.UploadRoutes()
 	mux.Handle(uploadPath, uploadHandler)
