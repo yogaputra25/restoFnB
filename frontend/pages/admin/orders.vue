@@ -17,6 +17,7 @@
       </div>
       <p v-if="orders.length === 0" class="text-dark-400 text-center py-8">No orders found</p>
     </div>
+    <Paginator :current-page="page" :total-items="total" :limit="limit" @page-change="onPageChange" />
   </div>
 </template>
 
@@ -34,15 +35,32 @@ interface Order {
   payment_status: string
 }
 
+interface PaginatedData {
+  items: Order[]
+  total: number
+  page: number
+  limit: number
+}
+
 const orders = ref<Order[]>([])
+const page = ref(1)
+const total = ref(0)
+const limit = 20
 
 async function fetchOrders() {
   try {
-    const res = await $api('/api/orders/by-chain')
-    orders.value = (res as any).data || []
+    const res = await $api(`/api/orders/by-chain?page=${page.value}&limit=${limit}`)
+    const data = (res as any).data as PaginatedData
+    orders.value = data.items || []
+    total.value = data.total
   } catch (e: any) {
     toast.show(e?.data?.message || 'Failed to load orders')
   }
+}
+
+function onPageChange(p: number) {
+  page.value = p
+  fetchOrders()
 }
 
 function formatPrice(price: number) {

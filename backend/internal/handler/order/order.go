@@ -3,6 +3,7 @@ package order
 import (
 	"encoding/json"
 	"net/http"
+	"strconv"
 
 	"github.com/resto-fnb/backend/internal/domain"
 	"github.com/resto-fnb/backend/pkg/response"
@@ -12,8 +13,8 @@ type OrderService interface {
 	Create(chainID, branchID, orderType string, tableID, customerID, guestID *string, customerName string, items []domain.OrderItem) (*domain.Order, error)
 	UpdateStatus(id, status string) (*domain.Order, error)
 	Pay(id, method string) (*domain.Order, error)
-	ListByBranchID(branchID string) ([]domain.Order, error)
-	ListByChainID(chainID string) ([]domain.Order, error)
+	ListByBranchID(branchID string, page, limit int) ([]domain.Order, int, error)
+	ListByChainID(chainID string, page, limit int) ([]domain.Order, int, error)
 }
 
 type Handler struct {
@@ -140,6 +141,28 @@ func (h *Handler) Pay(w http.ResponseWriter, r *http.Request) {
 	response.JSON(w, http.StatusOK, order)
 }
 
+func parsePagination(r *http.Request) (page, limit int, err error) {
+	page = 1
+	limit = 20
+
+	if p := r.URL.Query().Get("page"); p != "" {
+		page, err = strconv.Atoi(p)
+		if err != nil || page < 1 {
+			return 0, 0, err
+		}
+	}
+	if l := r.URL.Query().Get("limit"); l != "" {
+		limit, err = strconv.Atoi(l)
+		if err != nil || limit < 1 {
+			return 0, 0, err
+		}
+		if limit > 100 {
+			limit = 100
+		}
+	}
+	return page, limit, nil
+}
+
 func (h *Handler) ListByBranch(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		response.Error(w, http.StatusMethodNotAllowed, "method not allowed")
@@ -152,13 +175,24 @@ func (h *Handler) ListByBranch(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	orders, err := h.svc.ListByBranchID(branchID)
+	page, limit, err := parsePagination(r)
+	if err != nil {
+		response.Error(w, http.StatusBadRequest, "invalid page or limit")
+		return
+	}
+
+	orders, total, err := h.svc.ListByBranchID(branchID, page, limit)
 	if err != nil {
 		response.Error(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	response.JSON(w, http.StatusOK, orders)
+	response.JSON(w, http.StatusOK, domain.PaginatedResponse[domain.Order]{
+		Items: orders,
+		Total: total,
+		Page:  page,
+		Limit: limit,
+	})
 }
 
 func (h *Handler) ListByChain(w http.ResponseWriter, r *http.Request) {
@@ -173,11 +207,22 @@ func (h *Handler) ListByChain(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	orders, err := h.svc.ListByChainID(chainID)
+	page, limit, err := parsePagination(r)
+	if err != nil {
+		response.Error(w, http.StatusBadRequest, "invalid page or limit")
+		return
+	}
+
+	orders, total, err := h.svc.ListByChainID(chainID, page, limit)
 	if err != nil {
 		response.Error(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	response.JSON(w, http.StatusOK, orders)
+	response.JSON(w, http.StatusOK, domain.PaginatedResponse[domain.Order]{
+		Items: orders,
+		Total: total,
+		Page:  page,
+		Limit: limit,
+	})
 }

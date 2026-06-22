@@ -6,7 +6,7 @@
       <button
         v-for="s in statusFilters"
         :key="s.value"
-        @click="filterStatus = s.value"
+        @click="filterStatus = s.value; page = 1"
         class="px-3 py-1.5 rounded text-sm transition"
         :class="filterStatus === s.value ? 'bg-primary-500 text-white' : 'bg-dark-700 text-dark-300 hover:bg-dark-600'"
       >{{ s.label }}</button>
@@ -39,6 +39,7 @@
       </div>
       <p v-if="filteredOrders.length === 0" class="text-dark-400 text-center py-8">No orders</p>
     </div>
+    <Paginator :current-page="page" :total-items="total" :limit="limit" @page-change="onPageChange" />
   </div>
 </template>
 
@@ -56,8 +57,18 @@ interface Order {
   payment_status: string
 }
 
+interface PaginatedData {
+  items: Order[]
+  total: number
+  page: number
+  limit: number
+}
+
 const filterStatus = ref('')
 const orders = ref<Order[]>([])
+const page = ref(1)
+const total = ref(0)
+const limit = 20
 
 const statusFilters = [
   { label: 'All', value: '' },
@@ -74,8 +85,10 @@ const filteredOrders = computed(() =>
 
 async function fetchOrders() {
   try {
-    const res = await $api('/api/orders/by-chain')
-    orders.value = (res as any).data || []
+    const res = await $api(`/api/orders/by-chain?page=${page.value}&limit=${limit}`)
+    const data = (res as any).data as PaginatedData
+    orders.value = data.items || []
+    total.value = data.total
   } catch (e: any) {
     toast.show(e?.data?.message || 'Failed to load orders')
   }
@@ -97,6 +110,11 @@ async function processPayment(id: string) {
   } catch (e: any) {
     toast.show(e?.data?.message || 'Payment failed')
   }
+}
+
+function onPageChange(p: number) {
+  page.value = p
+  fetchOrders()
 }
 
 function statusClass(status: string) {

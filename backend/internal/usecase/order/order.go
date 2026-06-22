@@ -9,8 +9,8 @@ import (
 type OrderRepo interface {
 	Create(order *domain.Order) error
 	GetByID(id string) (*domain.Order, error)
-	ListByBranchID(branchID string) ([]domain.Order, error)
-	ListByChainID(chainID string) ([]domain.Order, error)
+	ListByBranchID(branchID string, page, limit int) ([]domain.Order, int, error)
+	ListByChainID(chainID string, page, limit int) ([]domain.Order, int, error)
 	UpdateStatus(id, status string) error
 	UpdatePayment(id, status, method string) error
 }
@@ -113,10 +113,10 @@ func (uc *Usecase) Pay(id, method string) (*domain.Order, error) {
 	return order, nil
 }
 
-func (uc *Usecase) ListByBranchID(branchID string) ([]domain.Order, error) {
-	return uc.repo.ListByBranchID(branchID)
+func (uc *Usecase) ListByBranchID(branchID string, page, limit int) ([]domain.Order, int, error) {
+	return uc.repo.ListByBranchID(branchID, page, limit)
 }
 
-func (uc *Usecase) ListByChainID(chainID string) ([]domain.Order, error) {
-	return uc.repo.ListByChainID(chainID)
+func (uc *Usecase) ListByChainID(chainID string, page, limit int) ([]domain.Order, int, error) {
+	return uc.repo.ListByChainID(chainID, page, limit)
 }

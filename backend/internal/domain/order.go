@@ -33,8 +33,8 @@ type OrderItem struct {
 type OrderStore interface {
 	Create(order *Order) error
 	GetByID(id string) (*Order, error)
-	ListByBranchID(branchID string) ([]Order, error)
-	ListByChainID(chainID string) ([]Order, error)
+	ListByBranchID(branchID string, page, limit int) ([]Order, int, error)
+	ListByChainID(chainID string, page, limit int) ([]Order, int, error)
 	UpdateStatus(id, status string) error
 	UpdatePayment(id, status, method string) error
 }

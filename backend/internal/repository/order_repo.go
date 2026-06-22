@@ -70,17 +70,25 @@ func (r *OrderRepo) GetByID(id string) (*domain.Order, error) {
 	return o, nil
 }
 
-func (r *OrderRepo) ListByBranchID(branchID string) ([]domain.Order, error) {
+func (r *OrderRepo) ListByBranchID(branchID string, page, limit int) ([]domain.Order, int, error) {
+	offset := (page - 1) * limit
+
+	var total int
+	err := r.db.QueryRow(`SELECT COUNT(*) FROM orders WHERE branch_id = $1`, branchID).Scan(&total)
+	if err != nil {
+		return nil, 0, err
+	}
+
 	rows, err := r.db.Query(
 		`SELECT id, chain_id, branch_id, table_id, customer_id,
 		        COALESCE(guest_id, '') as guest_id,
 		        COALESCE(customer_name, '') as customer_name,
 		        order_type, status, payment_status, payment_method,
 		        total_amount, created_at, updated_at
-		 FROM orders WHERE branch_id = $1 ORDER BY created_at DESC`, branchID,
+		 FROM orders WHERE branch_id = $1 ORDER BY created_at DESC LIMIT $2 OFFSET $3`, branchID, limit, offset,
 	)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	defer rows.Close()
 
@@ -89,24 +97,32 @@ func (r *OrderRepo) ListByBranchID(branchID string) ([]domain.Order, error) {
 		var o domain.Order
 		if err := rows.Scan(&o.ID, &o.ChainID, &o.BranchID, &o.TableID, &o.CustomerID, &o.GuestID, &o.CustomerName,
 			&o.OrderType, &o.Status, &o.PaymentStatus, &o.PaymentMethod, &o.TotalAmount, &o.CreatedAt, &o.UpdatedAt); err != nil {
-			return nil, err
+			return nil, 0, err
 		}
 		orders = append(orders, o)
 	}
-	return orders, nil
+	return orders, total, nil
 }
 
-func (r *OrderRepo) ListByChainID(chainID string) ([]domain.Order, error) {
+func (r *OrderRepo) ListByChainID(chainID string, page, limit int) ([]domain.Order, int, error) {
+	offset := (page - 1) * limit
+
+	var total int
+	err := r.db.QueryRow(`SELECT COUNT(*) FROM orders WHERE chain_id = $1`, chainID).Scan(&total)
+	if err != nil {
+		return nil, 0, err
+	}
+
 	rows, err := r.db.Query(
 		`SELECT id, chain_id, branch_id, table_id, customer_id,
 		        COALESCE(guest_id, '') as guest_id,
 		        COALESCE(customer_name, '') as customer_name,
 		        order_type, status, payment_status, payment_method,
 		        total_amount, created_at, updated_at
-		 FROM orders WHERE chain_id = $1 ORDER BY created_at DESC`, chainID,
+		 FROM orders WHERE chain_id = $1 ORDER BY created_at DESC LIMIT $2 OFFSET $3`, chainID, limit, offset,
 	)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	defer rows.Close()
 
@@ -115,11 +131,11 @@ func (r *OrderRepo) ListByChainID(chainID string) ([]domain.Order, error) {
 		var o domain.Order
 		if err := rows.Scan(&o.ID, &o.ChainID, &o.BranchID, &o.TableID, &o.CustomerID, &o.GuestID, &o.CustomerName,
 			&o.OrderType, &o.Status, &o.PaymentStatus, &o.PaymentMethod, &o.TotalAmount, &o.CreatedAt, &o.UpdatedAt); err != nil {
-			return nil, err
+			return nil, 0, err
 		}
 		orders = append(orders, o)
 	}
-	return orders, nil
+	return orders, total, nil
 }
 
 func (r *OrderRepo) UpdateStatus(id, status string) error {
