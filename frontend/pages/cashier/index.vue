@@ -15,11 +15,17 @@
     <div class="grid gap-3">
       <div v-for="order in filteredOrders" :key="order.id"
         class="bg-dark-700 rounded-lg p-4 flex items-center justify-between">
-        <div class="flex items-center gap-3">
-          <span class="text-white font-semibold">#{{ order.id?.slice(0, 8) }}</span>
-          <span class="px-2 py-0.5 rounded text-xs text-white"
-            :class="statusClass(order.status)">{{ order.status }}</span>
-          <span class="text-dark-400 text-sm">{{ order.order_type }}</span>
+        <div>
+          <div class="flex items-center gap-3">
+            <span class="text-white font-semibold">#{{ order.id?.slice(0, 8) }}</span>
+            <span class="px-2 py-0.5 rounded text-xs text-white"
+              :class="statusClass(order.status)">{{ order.status }}</span>
+            <span class="text-dark-400 text-sm">{{ order.order_type }}</span>
+          </div>
+          <div class="flex items-center gap-3 mt-1 text-xs text-dark-400">
+            <span>{{ order.customer_name || 'Guest' }}</span>
+            <span v-if="order.created_at">{{ formatDate(order.created_at) }}</span>
+          </div>
         </div>
         <div class="flex items-center gap-3">
           <span class="text-primary-500 font-bold">Rp{{ formatPrice(order.total_amount) }}</span>
@@ -55,6 +61,8 @@ interface Order {
   order_type: string
   total_amount: number
   payment_status: string
+  customer_name?: string
+  created_at?: string
 }
 
 interface PaginatedData {
@@ -130,6 +138,11 @@ function statusClass(status: string) {
 
 function formatPrice(price: number) {
   return price.toLocaleString('id-ID')
+}
+
+function formatDate(dateStr: string) {
+  const d = new Date(dateStr)
+  return d.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
 }
 
 fetchOrders()

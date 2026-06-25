@@ -18,7 +18,6 @@ type RegisterRequest struct {
 }
 
 type LoginRequest struct {
-	ChainID  string `json:"chain_id"`
 	Email    string `json:"email"`
 	Password string `json:"password"`
 }
@@ -29,7 +28,7 @@ type RefreshRequest struct {
 
 type AuthService interface {
 	Register(chainID string, branchID *string, email, password, name string, role domain.Role) (*domain.User, error)
-	Login(chainID, email, password string) (*domain.AuthTokens, error)
+	Login(email, password string) (*domain.AuthTokens, error)
 	Refresh(refreshToken string) (*domain.AuthTokens, error)
 	ListStaff(chainID string) ([]domain.User, error)
 	DeactivateStaff(id string) error
@@ -76,7 +75,7 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tokens, err := h.svc.Login(req.ChainID, req.Email, req.Password)
+	tokens, err := h.svc.Login(req.Email, req.Password)
 	if err != nil {
 		response.Error(w, http.StatusUnauthorized, err.Error())
 		return

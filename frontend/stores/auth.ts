@@ -43,10 +43,10 @@ export const useAuthStore = defineStore('auth', () => {
   const isAdmin = computed(() => user.value?.role === 'admin')
   const isCashier = computed(() => user.value?.role === 'cashier')
 
-  async function login(chainId: string, email: string, password: string) {
+  async function login(email: string, password: string) {
     const res = await $fetch('/api/auth/login', {
       method: 'POST',
-      body: { chain_id: chainId, email, password },
+      body: { email, password },
     })
 
     const data = res as { data: { access_token: string; refresh_token: string } }

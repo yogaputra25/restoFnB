@@ -2,6 +2,7 @@ package repository
 
 import (
 	"database/sql"
+	"fmt"
 	"time"
 
 	"github.com/resto-fnb/backend/internal/domain"
@@ -38,6 +39,33 @@ func (r *UserRepo) GetByEmail(chainID, email string) (*domain.User, error) {
 		return nil, err
 	}
 	return u, nil
+}
+
+func (r *UserRepo) GetByEmailOnly(email string) (*domain.User, error) {
+	rows, err := r.db.Query(
+		`SELECT id, chain_id, branch_id, email, password_hash, name, role, is_active, created_at, updated_at
+		 FROM users WHERE email = $1`, email,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var users []domain.User
+	for rows.Next() {
+		var u domain.User
+		if err := rows.Scan(&u.ID, &u.ChainID, &u.BranchID, &u.Email, &u.PasswordHash, &u.Name, &u.Role, &u.IsActive, &u.CreatedAt, &u.UpdatedAt); err != nil {
+			return nil, err
+		}
+		users = append(users, u)
+	}
+	if len(users) == 0 {
+		return nil, sql.ErrNoRows
+	}
+	if len(users) > 1 {
+		return nil, fmt.Errorf("multiple accounts found for this email")
+	}
+	return &users[0], nil
 }
 
 func (r *UserRepo) GetByID(id string) (*domain.User, error) {

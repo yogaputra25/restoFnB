@@ -5,16 +5,6 @@
 
       <form @submit.prevent="handleLogin" class="space-y-4">
         <div>
-          <label class="block text-sm text-dark-200 mb-1">Chain ID</label>
-          <input
-            v-model="chainId"
-            type="text"
-            class="w-full px-3 py-2 rounded bg-dark-600 text-white border border-dark-400 focus:border-primary-500 outline-none"
-            required
-          />
-        </div>
-
-        <div>
           <label class="block text-sm text-dark-200 mb-1">Email</label>
           <input
             v-model="email"
@@ -51,7 +41,6 @@
 const auth = useAuthStore()
 const router = useRouter()
 
-const chainId = ref('')
 const email = ref('')
 const password = ref('')
 const error = ref('')
@@ -59,7 +48,7 @@ const error = ref('')
 async function handleLogin() {
   error.value = ''
   try {
-    await auth.login(chainId.value, email.value, password.value)
+    await auth.login(email.value, password.value)
     if (auth.isAdmin) {
       router.push('/admin')
     } else if (auth.isCashier) {

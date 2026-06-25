@@ -15,7 +15,7 @@ import (
 
 type UserRepo interface {
 	Create(user *domain.User) error
-	GetByEmail(chainID, email string) (*domain.User, error)
+	GetByEmailOnly(email string) (*domain.User, error)
 	GetByID(id string) (*domain.User, error)
 	ListByChainID(chainID string) ([]domain.User, error)
 	Deactivate(id string) error
@@ -53,8 +53,8 @@ func (uc *Usecase) Register(chainID string, branchID *string, email, password, n
 	return user, nil
 }
 
-func (uc *Usecase) Login(chainID, email, password string) (*domain.AuthTokens, error) {
-	user, err := uc.userRepo.GetByEmail(chainID, email)
+func (uc *Usecase) Login(email, password string) (*domain.AuthTokens, error) {
+	user, err := uc.userRepo.GetByEmailOnly(email)
 	if err != nil {
 		return nil, fmt.Errorf("invalid credentials")
 	}
