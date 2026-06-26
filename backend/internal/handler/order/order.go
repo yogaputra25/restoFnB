@@ -76,7 +76,7 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response.JSON(w, http.StatusCreated, order)
+	response.Created(w, order)
 }
 
 type statusRequest struct {
@@ -107,7 +107,7 @@ func (h *Handler) UpdateStatus(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response.JSON(w, http.StatusOK, order)
+	response.Success(w, order)
 }
 
 type payRequest struct {
@@ -138,7 +138,7 @@ func (h *Handler) Pay(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response.JSON(w, http.StatusOK, order)
+	response.Success(w, order)
 }
 
 func parsePagination(r *http.Request) (page, limit int, err error) {
@@ -187,12 +187,7 @@ func (h *Handler) ListByBranch(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response.JSON(w, http.StatusOK, domain.PaginatedResponse[domain.Order]{
-		Items: orders,
-		Total: total,
-		Page:  page,
-		Limit: limit,
-	})
+	response.List(w, orders, page, limit, total)
 }
 
 func (h *Handler) ListByChain(w http.ResponseWriter, r *http.Request) {
@@ -219,10 +214,5 @@ func (h *Handler) ListByChain(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response.JSON(w, http.StatusOK, domain.PaginatedResponse[domain.Order]{
-		Items: orders,
-		Total: total,
-		Page:  page,
-		Limit: limit,
-	})
+	response.List(w, orders, page, limit, total)
 }

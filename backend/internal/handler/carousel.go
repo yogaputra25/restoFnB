@@ -65,7 +65,7 @@ func (h *CarouselHandler) Create(w http.ResponseWriter, r *http.Request) {
 		response.Error(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-	response.JSON(w, http.StatusCreated, s)
+	response.Created(w, s)
 }
 
 func (h *CarouselHandler) List(w http.ResponseWriter, r *http.Request) {
@@ -83,7 +83,7 @@ func (h *CarouselHandler) List(w http.ResponseWriter, r *http.Request) {
 		response.Error(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-	response.JSON(w, http.StatusOK, slides)
+	response.Success(w, slides)
 }
 
 func (h *CarouselHandler) ListPublic(w http.ResponseWriter, r *http.Request) {
@@ -101,7 +101,7 @@ func (h *CarouselHandler) ListPublic(w http.ResponseWriter, r *http.Request) {
 		response.Error(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-	response.JSON(w, http.StatusOK, slides)
+	response.Success(w, slides)
 }
 
 func (h *CarouselHandler) Update(w http.ResponseWriter, r *http.Request) {
@@ -119,7 +119,7 @@ func (h *CarouselHandler) Update(w http.ResponseWriter, r *http.Request) {
 		response.Error(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-	response.JSON(w, http.StatusOK, s)
+	response.Success(w, s)
 }
 
 func (h *CarouselHandler) Delete(w http.ResponseWriter, r *http.Request) {
@@ -136,5 +136,5 @@ func (h *CarouselHandler) Delete(w http.ResponseWriter, r *http.Request) {
 		response.Error(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-	response.JSON(w, http.StatusOK, map[string]string{"message": "deleted"})
+	response.Success(w, map[string]string{"message": "deleted"})
 }

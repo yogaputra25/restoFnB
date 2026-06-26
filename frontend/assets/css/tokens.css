@@ -1,0 +1,97 @@
+/* ═══════════════════════════════════════════════
+   Design Tokens — Free Assets Edition
+   ═══════════════════════════════════════════════ */
+
+:root {
+  /* ── Colors ── */
+  --color-primary: #C65D3B;
+  --color-secondary: #D97706;
+  --color-accent: #F4B400;
+  --color-success: #2E7D32;
+  --color-danger: #C0392B;
+  --color-background: #FAF8F5;
+  --color-surface: #FFFFFF;
+  --color-surface-secondary: #F5F3EF;
+  --color-border: #E8E3DD;
+  --color-text-primary: #2F2F2F;
+  --color-text-secondary: #6B6B6B;
+
+  /* ── Typography ── */
+  --font-heading: 'Outfit', sans-serif;
+  --font-body: 'Inter', sans-serif;
+  --font-size-hero: 56px;
+  --font-size-page-title: 36px;
+  --font-size-section: 28px;
+  --font-size-card-title: 22px;
+  --font-size-body: 16px;
+  --font-size-small: 14px;
+  --font-size-caption: 12px;
+
+  /* ── Spacing (8px base) ── */
+  --spacing-unit: 8px;
+  --space-1: calc(var(--spacing-unit) * 1);   /* 8px  */
+  --space-2: calc(var(--spacing-unit) * 2);   /* 16px */
+  --space-3: calc(var(--spacing-unit) * 3);   /* 24px */
+  --space-4: calc(var(--spacing-unit) * 4);   /* 32px */
+  --space-5: calc(var(--spacing-unit) * 5);   /* 40px */
+  --space-6: calc(var(--spacing-unit) * 6);   /* 48px */
+  --space-7: calc(var(--spacing-unit) * 7);   /* 56px */
+  --space-8: calc(var(--spacing-unit) * 8);   /* 64px */
+
+  /* ── Border Radius ── */
+  --radius-card: 20px;
+  --radius-button: 14px;
+  --radius-input: 14px;
+  --radius-image: 18px;
+
+  /* ── Shadows — soft, natural, no glow ── */
+  --shadow-sm: 0 1px 3px 0 rgba(47, 47, 47, 0.06);
+  --shadow-md: 0 4px 12px 0 rgba(47, 47, 47, 0.08);
+  --shadow-lg: 0 8px 24px 0 rgba(47, 47, 47, 0.10);
+
+  /* ── Transitions ── */
+  --transition-fast: 150ms ease;
+  --transition-base: 250ms ease;
+  --transition-slow: 350ms ease;
+}
+
+/* ── Typography utility classes ── */
+.font-heading { font-family: var(--font-heading); }
+.font-body    { font-family: var(--font-body); }
+
+/* ── Skeleton shimmer keyframes ── */
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+/* ── Heart bounce keyframes ── */
+@keyframes heart-bounce {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(1.3); }
+  60%  { transform: scale(0.95); }
+  100% { transform: scale(1); }
+}
+
+/* ── Toast slide-down keyframes ── */
+@keyframes toast-slide-down {
+  from {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes toast-slide-up {
+  from {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+}

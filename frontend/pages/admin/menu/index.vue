@@ -1,190 +1,336 @@
 <template>
-  <div class="p-6">
-    <h1 class="text-2xl font-bold text-white mb-6">Menu Management</h1>
+  <div>
+    <PageTitle title="Menu Management" description="Manage categories and menu items" />
 
-    <section class="mb-8">
-      <h2 class="text-lg font-semibold text-white mb-4">Categories</h2>
-      <form @submit.prevent="addCategory" class="flex gap-2 mb-4 max-w-md">
-        <input v-model="newCategoryName" placeholder="Category name"
-          class="flex-1 px-3 py-2 rounded bg-dark-700 text-white border border-dark-500 focus:border-primary-500 outline-none" />
-        <button type="submit" class="px-4 py-2 bg-primary-500 text-white rounded hover:bg-primary-600">Add</button>
-      </form>
-      <div class="space-y-2 max-w-lg">
-        <div v-for="cat in categories" :key="cat.id"
-          class="bg-dark-700 px-4 py-3 rounded flex items-center justify-between gap-4">
-          <div v-if="editingCategoryId !== cat.id" class="flex-1 min-w-0">
-            <span class="text-white font-medium">{{ cat.name }}</span>
-            <span v-if="cat.description" class="ml-2 text-dark-400 text-sm">{{ cat.description }}</span>
+    <div class="flex gap-6">
+      <!-- Left: Categories panel -->
+      <div class="w-[260px] shrink-0 hidden lg:block">
+        <div class="bg-[var(--color-surface)] rounded-[var(--radius-card)] shadow-[var(--shadow-sm)] overflow-hidden">
+          <div class="p-4 border-b border-[var(--color-border)]">
+            <h4 class="font-heading text-sm font-semibold text-[var(--color-text-primary)]">Categories</h4>
           </div>
-          <div v-else class="flex-1 flex gap-2">
-            <input v-model="editCategoryName" placeholder="Name"
-              class="flex-1 px-2 py-1 rounded bg-dark-600 text-white border border-dark-500 focus:border-primary-500 outline-none text-sm" />
-            <input v-model="editCategoryDesc" placeholder="Description"
-              class="flex-1 px-2 py-1 rounded bg-dark-600 text-white border border-dark-500 focus:border-primary-500 outline-none text-sm" />
-            <button @click="saveCategory(cat.id)" class="px-2 py-1 bg-green-600 text-white rounded text-xs">Save</button>
-            <button @click="editingCategoryId = null" class="px-2 py-1 bg-dark-500 text-white rounded text-xs">Cancel</button>
+          <div class="p-2 space-y-0.5">
+            <button
+              v-for="cat in categories"
+              :key="cat.id"
+              class="w-full text-left px-3 py-2 rounded-lg text-sm transition-all"
+              :class="selectedCategory === cat.id ? 'bg-[var(--color-primary)]/5 text-[var(--color-primary)] font-medium' : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-secondary)]'"
+              @click="selectedCategory = cat.id"
+            >
+              {{ cat.name }}
+            </button>
           </div>
-          <div class="flex gap-2 shrink-0">
-            <button @click="startEditCategory(cat)" class="text-blue-400 text-sm hover:text-blue-300">Edit</button>
-            <button @click="deleteCategory(cat.id)" class="text-red-400 text-sm hover:text-red-300">Delete</button>
+          <div class="p-3 border-t border-[var(--color-border)]">
+            <button class="w-full py-2 rounded-[var(--radius-button)] border border-dashed border-[var(--color-border)] text-sm text-[var(--color-text-secondary)] hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] transition-colors" @click="showAddCategory = true">
+              + Add Category
+            </button>
           </div>
         </div>
       </div>
-    </section>
 
-    <section>
-      <h2 class="text-lg font-semibold text-white mb-4">Menu Items</h2>
+      <!-- Right: Menu items -->
+      <div class="flex-1 min-w-0">
+        <!-- Toolbar -->
+        <PageToolbar>
+          <template #left>
+            <div class="relative flex-1 max-w-xs">
+              <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-text-secondary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              <input v-model="searchQuery" type="text" placeholder="Search menu items..." class="w-full pl-9 pr-4 py-2 rounded-[var(--radius-input)] text-sm bg-[var(--color-surface-secondary)] text-[var(--color-text-primary)] border border-[var(--color-border)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]" />
+            </div>
+            <select v-model="sortBy" class="px-3 py-2 rounded-[var(--radius-input)] text-sm bg-[var(--color-surface-secondary)] text-[var(--color-text-primary)] border border-[var(--color-border)] focus:outline-none">
+              <option value="name">Name</option>
+              <option value="price">Price</option>
+            </select>
+          </template>
+          <template #right>
+            <AppButton variant="primary" size="sm" @click="openAddDrawer()">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
+              Add Menu
+            </AppButton>
+          </template>
+        </PageToolbar>
 
-      <form @submit.prevent="addMenuItem" class="mb-6 p-4 bg-dark-800 rounded-lg max-w-lg space-y-3">
-        <h3 class="text-white font-medium text-sm">Add Menu Item</h3>
-        <div class="grid grid-cols-2 gap-3">
-          <input v-model="newItem.name" placeholder="Name"
-            class="px-3 py-2 rounded bg-dark-700 text-white border border-dark-500 focus:border-primary-500 outline-none text-sm" />
-          <input v-model.number="newItem.price" type="number" placeholder="Price"
-            class="px-3 py-2 rounded bg-dark-700 text-white border border-dark-500 focus:border-primary-500 outline-none text-sm" />
+        <!-- Loading state -->
+        <div v-if="loading" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+          <div v-for="i in 6" :key="i" class="h-48 rounded-[var(--radius-card)] bg-gradient-to-r from-[var(--color-surface-secondary)] via-white/40 to-[var(--color-surface-secondary)] bg-[length:200%_100%] animate-shimmer" />
         </div>
-        <select v-model="newItem.category_id"
-          class="w-full px-3 py-2 rounded bg-dark-700 text-white border border-dark-500 focus:border-primary-500 outline-none text-sm">
-          <option value="" disabled>Select category</option>
-          <option v-for="cat in categories" :key="cat.id" :value="cat.id">{{ cat.name }}</option>
-        </select>
-        <input v-model="newItem.description" placeholder="Description"
-          class="w-full px-3 py-2 rounded bg-dark-700 text-white border border-dark-500 focus:border-primary-500 outline-none text-sm" />
-        <div class="flex gap-2 items-start">
-          <input type="file" accept="image/png,image/jpeg,image/gif,image/webp" @change="onAddImageSelect"
-            class="flex-1 text-sm text-white file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:bg-primary-500 file:text-white file:text-xs file:font-semibold file:cursor-pointer" />
-          <img v-if="addImagePreview" :src="addImagePreview" class="w-10 h-10 rounded object-cover shrink-0" />
-        </div>
-        <input v-if="!addImagePreview" v-model="newItem.image_url" placeholder="...or paste Image URL"
-          class="w-full px-3 py-2 rounded bg-dark-700 text-white border border-dark-500 focus:border-primary-500 outline-none text-sm" />
-        <label class="flex items-center gap-2 text-sm text-white">
-          <input v-model="newItem.is_available" type="checkbox" class="accent-primary-500" />
-          Available
-        </label>
-        <button type="submit" class="w-full py-2 bg-primary-500 text-white rounded hover:bg-primary-600 text-sm font-semibold">
-          Add Menu Item
-        </button>
-      </form>
 
-      <div class="grid gap-3">
-        <div v-for="item in menuItems" :key="item.id"
-          class="bg-dark-700 px-4 py-3 rounded flex items-center justify-between gap-4">
-          <div class="flex items-center gap-3 flex-1 min-w-0">
-            <img v-if="item.image_url" :src="item.image_url" class="w-10 h-10 rounded object-cover shrink-0" />
-            <div class="min-w-0">
-              <div class="flex items-center gap-2">
-                <span class="text-white font-medium">{{ item.name }}</span>
-                <span :class="['text-xs px-1.5 py-0.5 rounded', item.is_available ? 'bg-green-900 text-green-300' : 'bg-red-900 text-red-300']">
-                  {{ item.is_available ? 'Active' : 'Inactive' }}
-                </span>
+        <!-- Empty state -->
+        <AppEmptyState
+          v-else-if="filteredItems.length === 0"
+          title="No Menu Items"
+          description="Add your first menu item to get started."
+          action-label="Add Menu Item"
+          @action="openAddDrawer()"
+        />
+
+        <!-- Card grid -->
+        <div v-else class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4" data-aos="fade-up">
+          <div
+            v-for="item in filteredItems"
+            :key="item.id"
+            class="bg-[var(--color-surface)] rounded-[var(--radius-card)] shadow-[var(--shadow-sm)] overflow-hidden transition-all duration-[var(--transition-base)] hover:-translate-y-1 hover:shadow-[var(--shadow-md)]"
+          >
+            <!-- Image -->
+            <div class="h-32 bg-[var(--color-surface-secondary)] overflow-hidden">
+              <img v-if="item.image_url" :src="item.image_url" :alt="item.name" class="w-full h-full object-cover" loading="lazy" />
+              <div v-else class="w-full h-full flex items-center justify-center text-3xl text-[var(--color-border)]">🍽</div>
+            </div>
+
+            <!-- Content -->
+            <div class="p-4">
+              <div class="flex items-start justify-between gap-2 mb-1">
+                <h4 class="font-heading text-card-title text-[var(--color-text-primary)] truncate">{{ item.name }}</h4>
+                <StatusBadge :status="item.is_available ? 'active' : 'inactive'" variant="generic" />
               </div>
-              <div class="text-dark-400 text-xs truncate">
-                {{ getCategoryName(item.category_id) }} &middot; Rp{{ formatPrice(item.price) }}
+              <p class="text-xs text-[var(--color-text-secondary)] mb-2">{{ getCategoryName(item.category_id) }}</p>
+              <p class="font-bold text-[var(--color-primary)]">Rp{{ formatPrice(item.price) }}</p>
+
+              <!-- Actions -->
+              <div class="flex items-center gap-2 mt-3 pt-3 border-t border-[var(--color-border)]">
+                <button class="flex-1 py-1.5 rounded-lg text-xs font-medium text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-secondary)] transition-colors" @click="openEditDrawer(item)">Edit</button>
+                <button class="flex-1 py-1.5 rounded-lg text-xs font-medium text-[var(--color-danger)] hover:bg-[var(--color-danger)]/5 transition-colors" @click="confirmDelete(item)">Delete</button>
               </div>
             </div>
           </div>
-          <div class="flex gap-2 shrink-0">
-            <button @click="startEditItem(item)" class="text-blue-400 text-sm hover:text-blue-300">Edit</button>
-            <button @click="deleteItem(item.id)" class="text-red-400 text-sm hover:text-red-300">Delete</button>
-          </div>
         </div>
       </div>
-    </section>
+    </div>
 
-    <Teleport to="body">
-      <div v-if="editItemModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60" @click.self="editItemModal = false">
-        <div class="bg-dark-800 rounded-lg p-6 w-full max-w-md mx-4 space-y-3">
-          <h3 class="text-white font-semibold">Edit Menu Item</h3>
-          <div class="grid grid-cols-2 gap-3">
-            <input v-model="editItemForm.name" placeholder="Name"
-              class="px-3 py-2 rounded bg-dark-700 text-white border border-dark-500 focus:border-primary-500 outline-none text-sm" />
-            <input v-model.number="editItemForm.price" type="number" placeholder="Price"
-              class="px-3 py-2 rounded bg-dark-700 text-white border border-dark-500 focus:border-primary-500 outline-none text-sm" />
-          </div>
-          <select v-model="editItemForm.category_id"
-            class="w-full px-3 py-2 rounded bg-dark-700 text-white border border-dark-500 focus:border-primary-500 outline-none text-sm">
+    <!-- Add/Edit Drawer -->
+    <Drawer :open="drawerOpen" :title="editingItem ? 'Edit Menu Item' : 'Add Menu Item'" @close="closeDrawer">
+      <form @submit.prevent="saveItem" class="space-y-4">
+        <div>
+          <label class="text-xs font-medium text-[var(--color-text-secondary)] block mb-1">Category</label>
+          <select v-model="form.category_id" required class="w-full px-3 py-2.5 rounded-[var(--radius-input)] text-sm bg-[var(--color-surface-secondary)] text-[var(--color-text-primary)] border border-[var(--color-border)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]">
             <option value="" disabled>Select category</option>
             <option v-for="cat in categories" :key="cat.id" :value="cat.id">{{ cat.name }}</option>
           </select>
-          <input v-model="editItemForm.description" placeholder="Description"
-            class="w-full px-3 py-2 rounded bg-dark-700 text-white border border-dark-500 focus:border-primary-500 outline-none text-sm" />
+        </div>
+
+        <AppInput v-model="form.name" label="Name" floating required />
+        <AppInput v-model="form.description" label="Description" floating />
+        <AppInput v-model.number="form.price" label="Price" type="number" floating required />
+
+        <div>
+          <label class="text-xs font-medium text-[var(--color-text-secondary)] block mb-1">Image</label>
           <div class="flex gap-2 items-start">
-            <input type="file" accept="image/png,image/jpeg,image/gif,image/webp" @change="onEditImageSelect"
-              class="flex-1 text-sm text-white file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:bg-primary-500 file:text-white file:text-xs file:font-semibold file:cursor-pointer" />
-            <img v-if="editImagePreview" :src="editImagePreview" class="w-10 h-10 rounded object-cover shrink-0" />
-          </div>
-          <input v-if="!editFileSelected" v-model="editItemForm.image_url" placeholder="Image URL"
-            class="w-full px-3 py-2 rounded bg-dark-700 text-white border border-dark-500 focus:border-primary-500 outline-none text-sm" />
-          <label class="flex items-center gap-2 text-sm text-white">
-            <input v-model="editItemForm.is_available" type="checkbox" class="accent-primary-500" />
-            Available
-          </label>
-          <div class="flex gap-2 pt-2">
-            <button @click="saveItem" class="flex-1 py-2 bg-primary-500 text-white rounded hover:bg-primary-600 text-sm font-semibold">Save</button>
-            <button @click="editItemModal = false" class="flex-1 py-2 bg-dark-500 text-white rounded hover:bg-dark-400 text-sm">Cancel</button>
+            <input type="file" accept="image/png,image/jpeg,image/gif,image/webp" @change="onFileSelect" class="flex-1 text-sm file:mr-2 file:py-1 file:px-3 file:rounded-[var(--radius-button)] file:border-0 file:bg-[var(--color-primary)] file:text-white file:text-xs file:font-semibold file:cursor-pointer" />
+            <img v-if="imagePreview" :src="imagePreview" class="w-12 h-12 rounded-[var(--radius-image)] object-cover shrink-0" />
           </div>
         </div>
-      </div>
-    </Teleport>
+
+        <div v-if="form.image_url && !selectedFile" class="mt-1">
+          <label class="text-xs font-medium text-[var(--color-text-secondary)] block mb-1">Or paste URL</label>
+          <AppInput v-model="form.image_url" placeholder="https://..." />
+        </div>
+
+        <label class="flex items-center gap-2 text-sm text-[var(--color-text-primary)]">
+          <input v-model="form.is_available" type="checkbox" class="accent-[var(--color-primary)]" />
+          Available
+        </label>
+
+        <div v-if="formError" class="text-xs text-[var(--color-danger)]">{{ formError }}</div>
+
+        <div class="flex gap-3 pt-2">
+          <AppButton variant="secondary" class="flex-1" @click="closeDrawer">Cancel</AppButton>
+          <AppButton variant="primary" class="flex-1" type="submit" :loading="saving">{{ editingItem ? 'Save' : 'Add' }}</AppButton>
+        </div>
+      </form>
+    </Drawer>
+
+    <!-- Delete Modal -->
+    <Modal
+      :open="deleteModalOpen"
+      title="Delete Menu Item"
+      confirm-text="Delete"
+      variant="danger"
+      :loading="deleting"
+      @confirm="deleteItem"
+      @cancel="deleteModalOpen = false"
+    >
+      <p>Are you sure you want to delete <strong>{{ deletingItem?.name }}</strong>? This action cannot be undone.</p>
+    </Modal>
   </div>
 </template>
 
 <script setup lang="ts">
-definePageMeta({ layout: 'dashboard', middleware: 'auth' })
+definePageMeta({ layout: 'admin', middleware: 'auth' })
 
-interface Category { id: string; name: string; description?: string; display_order?: number }
+interface Category { id: string; name: string; description?: string }
 interface MenuItem { id: string; category_id: string; name: string; description?: string; price: number; image_url?: string; is_available: boolean }
 
 const { $api } = useNuxtApp()
 const auth = useAuthStore()
 const toast = useToast()
-const runtimeConfig = useRuntimeConfig()
 
-const newCategoryName = ref('')
-const editingCategoryId = ref<string | null>(null)
-const editCategoryName = ref('')
-const editCategoryDesc = ref('')
-
+const loading = ref(true)
 const categories = ref<Category[]>([])
 const menuItems = ref<MenuItem[]>([])
+const selectedCategory = ref<string | null>(null)
+const searchQuery = ref('')
+const sortBy = ref('name')
 
-const newItem = ref({ name: '', price: 0, category_id: '', description: '', image_url: '', is_available: true })
-const editItemModal = ref(false)
-const editItemForm = ref<MenuItem>({ id: '', category_id: '', name: '', description: '', price: 0, image_url: '', is_available: true })
+// Drawer
+const drawerOpen = ref(false)
+const editingItem = ref<MenuItem | null>(null)
+const form = reactive({ category_id: '', name: '', description: '', price: 0 as any, image_url: '', is_available: true })
+const selectedFile = ref<File | null>(null)
+const imagePreview = ref('')
+const saving = ref(false)
+const formError = ref('')
 
-const addSelectedFile = ref<File | null>(null)
-const addImagePreview = ref('')
-const editSelectedFile = ref<File | null>(null)
-const editImagePreview = ref('')
-const editFileSelected = computed(() => editSelectedFile.value !== null)
+// Delete
+const deleteModalOpen = ref(false)
+const deletingItem = ref<MenuItem | null>(null)
+const deleting = ref(false)
 
-async function uploadImage(file: File): Promise<string> {
-  const formData = new FormData()
-  formData.append('file', file)
+const filteredItems = computed(() => {
+  let items = menuItems.value
+  if (selectedCategory.value) {
+    items = items.filter(i => i.category_id === selectedCategory.value)
+  }
+  if (searchQuery.value) {
+    const q = searchQuery.value.toLowerCase()
+    items = items.filter(i => i.name.toLowerCase().includes(q))
+  }
+  if (sortBy.value === 'price') {
+    items = [...items].sort((a, b) => a.price - b.price)
+  } else {
+    items = [...items].sort((a, b) => a.name.localeCompare(b.name))
+  }
+  return items
+})
+
+function getCategoryName(id: string) {
+  return categories.value.find(c => c.id === id)?.name || 'Unknown'
+}
+
+function formatPrice(price: number) {
+  return price.toLocaleString('id-ID')
+}
+
+// Upload
+async function upload(file: File): Promise<string> {
+  const fd = new FormData()
+  fd.append('file', file)
   const res = await $fetch(`/api/upload?chain_id=${auth.user?.chainId}`, {
     method: 'POST',
     headers: { Authorization: `Bearer ${auth.accessToken}` },
-    body: formData,
+    body: fd,
   })
   return (res as any).url || (res as any).data?.url || ''
 }
 
-function onAddImageSelect(e: Event) {
+function onFileSelect(e: Event) {
   const file = (e.target as HTMLInputElement).files?.[0]
   if (!file) return
-  addSelectedFile.value = file
+  selectedFile.value = file
   const reader = new FileReader()
-  reader.onload = () => { addImagePreview.value = reader.result as string }
+  reader.onload = () => { imagePreview.value = reader.result as string }
   reader.readAsDataURL(file)
 }
 
-function onEditImageSelect(e: Event) {
-  const file = (e.target as HTMLInputElement).files?.[0]
-  if (!file) return
-  editSelectedFile.value = file
-  const reader = new FileReader()
-  reader.onload = () => { editImagePreview.value = reader.result as string }
-  reader.readAsDataURL(file)
+// Drawer
+function openAddDrawer() {
+  editingItem.value = null
+  form.category_id = ''
+  form.name = ''
+  form.description = ''
+  form.price = ''
+  form.image_url = ''
+  form.is_available = true
+  selectedFile.value = null
+  imagePreview.value = ''
+  formError.value = ''
+  drawerOpen.value = true
+}
+
+function openEditDrawer(item: MenuItem) {
+  editingItem.value = item
+  form.category_id = item.category_id
+  form.name = item.name
+  form.description = item.description || ''
+  form.price = item.price
+  form.image_url = item.image_url || ''
+  form.is_available = item.is_available
+  selectedFile.value = null
+  imagePreview.value = ''
+  formError.value = ''
+  drawerOpen.value = true
+}
+
+function closeDrawer() {
+  drawerOpen.value = false
+  editingItem.value = null
+}
+
+async function saveItem() {
+  if (!form.name || !form.price || !form.category_id) {
+    formError.value = 'Name, price, and category are required'
+    return
+  }
+  saving.value = true
+  formError.value = ''
+  let imageUrl = form.image_url
+  if (selectedFile.value) {
+    try { imageUrl = await upload(selectedFile.value) } catch {
+      formError.value = 'Failed to upload image'; saving.value = false; return
+    }
+  }
+  try {
+    if (editingItem.value) {
+      await $api('/api/admin/menu-items/update', {
+        method: 'POST',
+        body: { id: editingItem.value.id, category_id: form.category_id, name: form.name, description: form.description, price: Number(form.price), image_url: imageUrl, is_available: form.is_available },
+      })
+      toast.show('Menu item updated')
+    } else {
+      await $api('/api/admin/menu-items', {
+        method: 'POST',
+        body: { category_id: form.category_id, name: form.name, description: form.description, price: Number(form.price), image_url: imageUrl, is_available: form.is_available },
+      })
+      toast.show('Menu item added')
+    }
+    closeDrawer()
+    await fetchMenuItems()
+  } catch (e: any) {
+    toast.show(e?.data?.message || 'Failed to save item')
+  } finally {
+    saving.value = false
+  }
+}
+
+// Delete
+function confirmDelete(item: MenuItem) {
+  deletingItem.value = item
+  deleteModalOpen.value = true
+}
+
+async function deleteItem() {
+  if (!deletingItem.value) return
+  deleting.value = true
+  try {
+    await $api('/api/admin/menu-items/delete', { method: 'POST', body: { id: deletingItem.value.id } })
+    toast.show('Menu item deleted')
+    deleteModalOpen.value = false
+    await fetchMenuItems()
+  } catch (e: any) {
+    toast.show(e?.data?.message || 'Failed to delete item')
+  } finally {
+    deleting.value = false
+  }
+}
+
+async function fetchMenuItems() {
+  try {
+    const res = await $api('/api/admin/menu-items/list')
+    menuItems.value = (res as any).data || []
+  } catch (e: any) {
+    toast.show(e?.data?.message || 'Failed to load items')
+  }
 }
 
 async function fetchCategories() {
@@ -196,143 +342,19 @@ async function fetchCategories() {
   }
 }
 
-async function fetchMenuItems() {
-  try {
-    const res = await $api('/api/admin/menu-items/list')
-    menuItems.value = (res as any).data || []
-  } catch (e: any) {
-    toast.show(e?.data?.message || 'Failed to load menu items')
-  }
-}
-
-function getCategoryName(categoryId: string): string {
-  return categories.value.find(c => c.id === categoryId)?.name || 'Unknown'
-}
-
-async function addCategory() {
-  if (!newCategoryName.value) return
-  try {
-    await $api('/api/admin/categories', {
-      method: 'POST',
-      body: { name: newCategoryName.value, display_order: 0 },
-    })
-    newCategoryName.value = ''
-    await fetchCategories()
-  } catch (e: any) {
-    toast.show(e?.data?.message || 'Failed to add category')
-  }
-}
-
-function startEditCategory(cat: Category) {
-  editingCategoryId.value = cat.id
-  editCategoryName.value = cat.name
-  editCategoryDesc.value = cat.description || ''
-}
-
-async function saveCategory(id: string) {
-  try {
-    await $api('/api/admin/categories/update', {
-      method: 'POST',
-      body: { id, name: editCategoryName.value, description: editCategoryDesc.value, display_order: 0 },
-    })
-    editingCategoryId.value = null
-    await fetchCategories()
-    toast.show('Category updated')
-  } catch (e: any) {
-    toast.show(e?.data?.message || 'Failed to update category')
-  }
-}
-
-async function deleteCategory(id: string) {
-  try {
-    await $api('/api/admin/categories/delete', { method: 'POST', body: { id } })
-    await fetchCategories()
-    toast.show('Category deleted')
-  } catch (e: any) {
-    toast.show(e?.data?.message || 'Failed to delete category')
-  }
-}
-
-async function addMenuItem() {
-  if (!newItem.value.name || !newItem.value.price || !newItem.value.category_id) {
-    toast.show('Name, price, and category are required')
-    return
-  }
-  let imageUrl = newItem.value.image_url
-  if (addSelectedFile.value) {
-    try {
-      imageUrl = await uploadImage(addSelectedFile.value)
-    } catch {
-      toast.show('Failed to upload image')
-      return
-    }
-  }
-  try {
-    await $api('/api/admin/menu-items', {
-      method: 'POST',
-      body: {
-        name: newItem.value.name,
-        price: newItem.value.price,
-        category_id: newItem.value.category_id,
-        description: newItem.value.description,
-        image_url: imageUrl,
-        is_available: newItem.value.is_available,
-      },
-    })
-    newItem.value = { name: '', price: 0, category_id: '', description: '', image_url: '', is_available: true }
-    addSelectedFile.value = null
-    addImagePreview.value = ''
-    await fetchMenuItems()
-    toast.show('Menu item added')
-  } catch (e: any) {
-    toast.show(e?.data?.message || 'Failed to add menu item')
-  }
-}
-
-function startEditItem(item: MenuItem) {
-  editItemForm.value = { ...item }
-  editItemModal.value = true
-}
-
-async function saveItem() {
-  let imageUrl = editItemForm.value.image_url
-  if (editSelectedFile.value) {
-    try {
-      imageUrl = await uploadImage(editSelectedFile.value)
-    } catch {
-      toast.show('Failed to upload image')
-      return
-    }
-  }
-  try {
-    await $api('/api/admin/menu-items/update', {
-      method: 'POST',
-      body: { ...editItemForm.value, image_url: imageUrl },
-    })
-    editItemModal.value = false
-    editSelectedFile.value = null
-    editImagePreview.value = ''
-    await fetchMenuItems()
-    toast.show('Menu item updated')
-  } catch (e: any) {
-    toast.show(e?.data?.message || 'Failed to update menu item')
-  }
-}
-
-async function deleteItem(id: string) {
-  try {
-    await $api('/api/admin/menu-items/delete', { method: 'POST', body: { id } })
-    await fetchMenuItems()
-    toast.show('Menu item deleted')
-  } catch (e: any) {
-    toast.show(e?.data?.message || 'Failed to delete item')
-  }
-}
-
-function formatPrice(price: number) {
-  return price.toLocaleString('id-ID')
-}
-
-fetchCategories()
-fetchMenuItems()
+onMounted(async () => {
+  loading.value = true
+  await Promise.all([fetchCategories(), fetchMenuItems()])
+  loading.value = false
+})
 </script>
+
+<style scoped>
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.animate-shimmer {
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+</style>

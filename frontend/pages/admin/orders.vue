@@ -22,7 +22,7 @@
 </template>
 
 <script setup lang="ts">
-definePageMeta({ layout: 'dashboard', middleware: 'auth' })
+definePageMeta({ layout: 'admin', middleware: 'auth' })
 
 const { $api } = useNuxtApp()
 const toast = useToast()

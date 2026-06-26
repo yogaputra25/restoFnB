@@ -10,6 +10,7 @@ import (
 	"github.com/resto-fnb/backend/internal/handler/chain"
 	"github.com/resto-fnb/backend/internal/handler/menu"
 	"github.com/resto-fnb/backend/internal/handler/order"
+	reportHandler "github.com/resto-fnb/backend/internal/handler/report"
 	qrHandler "github.com/resto-fnb/backend/internal/handler/qr"
 	"github.com/resto-fnb/backend/internal/handler/theme"
 	"github.com/resto-fnb/backend/internal/handler"
@@ -21,6 +22,7 @@ import (
 	menuUsecase "github.com/resto-fnb/backend/internal/usecase/menu"
 	orderUsecase "github.com/resto-fnb/backend/internal/usecase/order"
 	qrUsecase "github.com/resto-fnb/backend/internal/usecase/qr"
+	reportUsecase "github.com/resto-fnb/backend/internal/usecase/report"
 	"github.com/resto-fnb/backend/pkg/database"
 	"github.com/resto-fnb/backend/pkg/seed"
 )
@@ -66,6 +68,7 @@ func main() {
 	availabilityUc := menuUsecase.NewAvailabilityUsecase(availabilityRepo)
 	tableUc := qrUsecase.NewTableUsecase(tableRepo, cfg.QRFrontendURL)
 	orderUc := orderUsecase.NewUsecase(orderRepo)
+	reportUc := reportUsecase.NewUsecase(orderRepo)
 	carouselUc := usecase.NewCarouselUsecase(carouselRepo)
 
 	chainHandler := chain.NewHandler(chainUc)
@@ -78,6 +81,7 @@ func main() {
 	availabilityHandler := menu.NewAvailabilityHandler(availabilityUc.SetAvailability, availabilityUc.GetByBranchID)
 	tableHandler := qrHandler.NewHandler(tableUc, branchRepo)
 	orderHandler := order.NewHandler(orderUc)
+	reportHandler := reportHandler.NewHandler(reportUc)
 	carouselHandler := handler.NewCarouselHandler(
 		carouselUc.Create, carouselUc.ListByChainID, carouselUc.ListPublic,
 		carouselUc.Update, carouselUc.SoftDelete,
@@ -92,6 +96,7 @@ func main() {
 	mux.HandleFunc("/api/auth/register", authHandler.Register)
 	mux.HandleFunc("/api/auth/login", authHandler.Login)
 	mux.HandleFunc("/api/auth/refresh", authHandler.Refresh)
+	mux.Handle("/api/auth/me", authMw(http.HandlerFunc(authHandler.Me)))
 
 	mux.Handle("/api/admin/chains", authMw(adminMw(http.HandlerFunc(chainHandler.Register))))
 	mux.Handle("/api/admin/branches", authMw(adminMw(http.HandlerFunc(branchHandler.Create))))
@@ -134,6 +139,7 @@ func main() {
 	mux.HandleFunc("/api/orders", orderHandler.Create)
 	mux.Handle("/api/orders/status", authMw(cashierMw(http.HandlerFunc(orderHandler.UpdateStatus))))
 	mux.Handle("/api/orders/pay", authMw(cashierMw(http.HandlerFunc(orderHandler.Pay))))
+	mux.Handle("/api/reports/sales", authMw(adminMw(http.HandlerFunc(reportHandler.Sales))))
 	mux.Handle("/api/orders/by-branch", authMw(cashierMw(http.HandlerFunc(orderHandler.ListByBranch))))
 	mux.Handle("/api/orders/by-chain", authMw(cashierMw(http.HandlerFunc(orderHandler.ListByChain))))
 

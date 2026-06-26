@@ -125,6 +125,14 @@ func (uc *Usecase) ListStaff(chainID string) ([]domain.User, error) {
 	return uc.userRepo.ListByChainID(chainID)
 }
 
+func (uc *Usecase) GetProfile(userID string) (*domain.User, error) {
+	user, err := uc.userRepo.GetByID(userID)
+	if err != nil {
+		return nil, fmt.Errorf("user not found")
+	}
+	return user, nil
+}
+
 func (uc *Usecase) DeactivateStaff(id string) error {
 	user, err := uc.userRepo.GetByID(id)
 	if err != nil {

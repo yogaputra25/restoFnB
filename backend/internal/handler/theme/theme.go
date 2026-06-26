@@ -46,7 +46,7 @@ func (h *Handler) Upsert(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response.JSON(w, http.StatusOK, theme)
+	response.Success(w, theme)
 }
 
 func (h *Handler) Get(w http.ResponseWriter, r *http.Request) {
@@ -67,5 +67,5 @@ func (h *Handler) Get(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response.JSON(w, http.StatusOK, theme)
+	response.Success(w, theme)
 }

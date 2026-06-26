@@ -1,3 +1,9 @@
+<template>
+  <div class="min-h-screen bg-[var(--color-background)] flex items-center justify-center">
+    <p class="text-[var(--color-text-secondary)]">Redirecting...</p>
+  </div>
+</template>
+
 <script setup lang="ts">
 const route = useRoute()
 const router = useRouter()
@@ -11,9 +17,3 @@ if (branch && table) {
   router.replace('/')
 }
 </script>
-
-<template>
-  <div class="min-h-screen bg-dark-900 flex items-center justify-center">
-    <p class="text-white">Redirecting...</p>
-  </div>
-</template>

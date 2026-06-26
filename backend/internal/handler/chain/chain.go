@@ -44,5 +44,5 @@ func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response.JSON(w, http.StatusCreated, chain)
+	response.Created(w, chain)
 }

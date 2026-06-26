@@ -83,7 +83,7 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	url := fmt.Sprintf("/uploads/%s/%s", user.ChainID, filename)
-	response.JSON(w, http.StatusCreated, map[string]string{"url": url})
+	response.Created(w, map[string]string{"url": url})
 }
 
 func UploadRoutes() (string, http.Handler) {

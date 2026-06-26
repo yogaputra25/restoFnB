@@ -1,149 +1,298 @@
 <template>
-  <div class="p-6">
-    <h1 class="text-2xl font-bold text-white mb-6">Orders</h1>
+  <div>
+    <PageTitle title="Orders" description="Manage incoming orders" />
 
-    <div class="flex gap-2 mb-4">
-      <button
-        v-for="s in statusFilters"
-        :key="s.value"
-        @click="filterStatus = s.value; page = 1"
-        class="px-3 py-1.5 rounded text-sm transition"
-        :class="filterStatus === s.value ? 'bg-primary-500 text-white' : 'bg-dark-700 text-dark-300 hover:bg-dark-600'"
-      >{{ s.label }}</button>
-    </div>
-
-    <div class="grid gap-3">
-      <div v-for="order in filteredOrders" :key="order.id"
-        class="bg-dark-700 rounded-lg p-4 flex items-center justify-between">
-        <div>
-          <div class="flex items-center gap-3">
-            <span class="text-white font-semibold">#{{ order.id?.slice(0, 8) }}</span>
-            <span class="px-2 py-0.5 rounded text-xs text-white"
-              :class="statusClass(order.status)">{{ order.status }}</span>
-            <span class="text-dark-400 text-sm">{{ order.order_type }}</span>
+    <div class="flex gap-6 h-[calc(100vh-200px)]">
+      <!-- Left: Orders List -->
+      <div class="w-[55%] flex flex-col">
+        <!-- Toolbar -->
+        <div class="flex items-center gap-3 mb-4 pb-3 border-b border-[var(--color-border)]">
+          <div class="relative flex-1 max-w-xs">
+            <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-text-secondary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            <input v-model="searchQuery" type="text" placeholder="Search orders..." class="w-full pl-9 pr-4 py-2 rounded-[var(--radius-input)] text-sm bg-[var(--color-surface-secondary)] text-[var(--color-text-primary)] border border-[var(--color-border)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]" />
           </div>
-          <div class="flex items-center gap-3 mt-1 text-xs text-dark-400">
-            <span>{{ order.customer_name || 'Guest' }}</span>
-            <span v-if="order.created_at">{{ formatDate(order.created_at) }}</span>
-          </div>
+          <select v-model="statusFilter" class="px-3 py-2 rounded-[var(--radius-input)] text-sm bg-[var(--color-surface-secondary)] text-[var(--color-text-primary)] border border-[var(--color-border)] focus:outline-none">
+            <option value="">All Status</option>
+            <option value="pending">Pending</option>
+            <option value="confirmed">Confirmed</option>
+            <option value="preparing">Preparing</option>
+            <option value="ready">Ready</option>
+            <option value="completed">Completed</option>
+            <option value="cancelled">Cancelled</option>
+          </select>
         </div>
-        <div class="flex items-center gap-3">
-          <span class="text-primary-500 font-bold">Rp{{ formatPrice(order.total_amount) }}</span>
-          <div class="flex gap-1">
-            <button v-if="order.status === 'pending'" @click="updateStatus(order.id, 'confirmed')"
-              class="px-3 py-1 bg-green-600 text-white rounded text-xs">Confirm</button>
-            <button v-if="order.status === 'confirmed'" @click="updateStatus(order.id, 'preparing')"
-              class="px-3 py-1 bg-blue-600 text-white rounded text-xs">Prepare</button>
-            <button v-if="order.status === 'preparing'" @click="updateStatus(order.id, 'ready')"
-              class="px-3 py-1 bg-yellow-600 text-white rounded text-xs">Ready</button>
-            <button v-if="order.status === 'ready' && order.payment_status !== 'paid'" @click="processPayment(order.id)"
-              class="px-3 py-1 bg-primary-500 text-white rounded text-xs">Pay</button>
-            <button v-if="order.status === 'ready' && order.payment_status === 'paid'" @click="updateStatus(order.id, 'completed')"
-              class="px-3 py-1 bg-green-600 text-white rounded text-xs">Complete</button>
+
+        <!-- Loading -->
+        <div v-if="loading" class="flex-1 space-y-3 overflow-y-auto">
+          <div v-for="i in 5" :key="i" class="h-24 rounded-[var(--radius-card)] bg-gradient-to-r from-[var(--color-surface-secondary)] via-white/40 to-[var(--color-surface-secondary)] bg-[length:200%_100%] animate-shimmer" />
+        </div>
+
+        <!-- Empty -->
+        <AppEmptyState
+          v-else-if="filteredOrders.length === 0"
+          title="No Orders"
+          description="Orders will appear here when customers place them."
+          class="flex-1"
+        />
+
+        <!-- Order cards -->
+        <div v-else class="flex-1 space-y-3 overflow-y-auto pr-2">
+          <div
+            v-for="order in filteredOrders"
+            :key="order.id"
+            class="bg-[var(--color-surface)] rounded-[var(--radius-card)] shadow-[var(--shadow-sm)] p-4 transition-all duration-[var(--transition-fast)] cursor-pointer border-l-4 hover:shadow-[var(--shadow-md)]"
+            :class="[selectedOrder?.id === order.id ? 'shadow-[var(--shadow-md)]' : '', statusBorder(order.status)]"
+            @click="selectOrder(order)"
+          >
+            <div class="flex items-start justify-between gap-3">
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-2 mb-1">
+                  <span class="font-mono text-xs font-bold text-[var(--color-text-secondary)]">#{{ order.id?.slice(0, 8) }}</span>
+                  <StatusBadge :status="order.status" />
+                  <span v-if="order.payment_status" class="text-[10px] px-1.5 py-0.5 rounded bg-[var(--color-surface-secondary)] text-[var(--color-text-secondary)]">{{ order.payment_status }}</span>
+                </div>
+                <p class="text-sm font-medium text-[var(--color-text-primary)] truncate">{{ order.customer_name || 'Guest' }}</p>
+                <p class="text-xs text-[var(--color-text-secondary)] mt-0.5">
+                  {{ getTimeAgo(order.created_at) }} · {{ order.items?.length || 0 }} items
+                </p>
+              </div>
+              <div class="text-right shrink-0">
+                <p class="font-bold text-sm text-[var(--color-primary)]">Rp{{ formatPrice(order.total_amount) }}</p>
+                <p class="text-[10px] text-[var(--color-text-secondary)]">{{ order.order_type }}</p>
+              </div>
+            </div>
           </div>
         </div>
       </div>
-      <p v-if="filteredOrders.length === 0" class="text-dark-400 text-center py-8">No orders</p>
+
+      <!-- Right: Order Detail -->
+      <div class="w-[45%]">
+        <div v-if="!selectedOrder" class="h-full flex items-center justify-center">
+          <div class="text-center">
+            <svg class="w-16 h-16 mx-auto text-[var(--color-border)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+            </svg>
+            <p class="mt-3 text-sm text-[var(--color-text-secondary)]">Select an order to view details</p>
+          </div>
+        </div>
+
+        <div v-else class="bg-[var(--color-surface)] rounded-[var(--radius-card)] shadow-[var(--shadow-sm)] p-6 h-full overflow-y-auto space-y-4">
+          <!-- Order header -->
+          <div class="flex items-start justify-between">
+            <div>
+              <h3 class="font-heading text-card-title text-[var(--color-text-primary)]">Order #{{ selectedOrder.id?.slice(0, 8) }}</h3>
+              <p class="text-xs text-[var(--color-text-secondary)]">{{ selectedOrder.customer_name || 'Guest' }} · {{ selectedOrder.order_type }} · {{ formatDate(selectedOrder.created_at) }}</p>
+            </div>
+            <StatusBadge :status="selectedOrder.status" />
+          </div>
+
+          <hr class="border-[var(--color-border)]" />
+
+          <!-- Items -->
+          <div>
+            <h4 class="text-sm font-semibold text-[var(--color-text-primary)] mb-2">Items</h4>
+            <div class="space-y-2">
+              <div v-for="(item, i) in selectedOrder.items" :key="i" class="flex items-center justify-between text-sm">
+                <span class="text-[var(--color-text-primary)]">{{ item.quantity }}x {{ item.name || `Item ${i + 1}` }}</span>
+                <span class="font-medium text-[var(--color-text-primary)]">Rp{{ formatPrice(item.subtotal || item.unit_price * item.quantity) }}</span>
+              </div>
+            </div>
+          </div>
+
+          <hr class="border-[var(--color-border)]" />
+
+          <!-- Totals -->
+          <div class="space-y-1">
+            <div class="flex justify-between text-sm">
+              <span class="text-[var(--color-text-secondary)]">Subtotal</span>
+              <span class="text-[var(--color-text-primary)]">Rp{{ formatPrice(selectedOrder.total_amount) }}</span>
+            </div>
+            <div class="flex justify-between font-bold text-lg">
+              <span class="text-[var(--color-text-primary)]">Total</span>
+              <span class="text-[var(--color-primary)]">Rp{{ formatPrice(selectedOrder.total_amount) }}</span>
+            </div>
+          </div>
+
+          <!-- Notes -->
+          <div v-if="selectedOrder.notes">
+            <h4 class="text-sm font-semibold text-[var(--color-text-primary)] mb-1">Notes</h4>
+            <p class="text-sm text-[var(--color-text-secondary)] bg-[var(--color-surface-secondary)] p-3 rounded-[var(--radius-input)]">{{ selectedOrder.notes }}</p>
+          </div>
+
+          <!-- Workflow buttons -->
+          <div class="flex flex-wrap gap-2 pt-2">
+            <button
+              v-if="selectedOrder.status === 'pending'"
+              class="flex-1 min-w-[120px] py-2.5 rounded-[var(--radius-button)] bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 transition-all hover:scale-[1.02] active:scale-[0.98]"
+              @click="updateStatus('confirmed')"
+            >
+              Confirm
+            </button>
+            <button
+              v-if="selectedOrder.status === 'confirmed'"
+              class="flex-1 min-w-[120px] py-2.5 rounded-[var(--radius-button)] bg-purple-600 text-white text-sm font-semibold hover:bg-purple-700 transition-all hover:scale-[1.02] active:scale-[0.98]"
+              @click="updateStatus('preparing')"
+            >
+              Prepare
+            </button>
+            <button
+              v-if="selectedOrder.status === 'preparing'"
+              class="flex-1 min-w-[120px] py-2.5 rounded-[var(--radius-button)] bg-yellow-600 text-white text-sm font-semibold hover:bg-yellow-700 transition-all hover:scale-[1.02] active:scale-[0.98]"
+              @click="updateStatus('ready')"
+            >
+              Ready
+            </button>
+            <button
+              v-if="selectedOrder.status === 'ready' && selectedOrder.payment_status !== 'paid'"
+              class="flex-1 min-w-[120px] py-2.5 rounded-[var(--radius-button)] bg-[var(--color-primary)] text-white text-sm font-semibold hover:bg-[#a84e31] transition-all hover:scale-[1.02] active:scale-[0.98]"
+              @click="processPayment"
+            >
+              Pay
+            </button>
+            <button
+              v-if="selectedOrder.status === 'ready' && selectedOrder.payment_status === 'paid'"
+              class="flex-1 min-w-[120px] py-2.5 rounded-[var(--radius-button)] bg-[var(--color-success)] text-white text-sm font-semibold hover:bg-[#256d29] transition-all hover:scale-[1.02] active:scale-[0.98]"
+              @click="updateStatus('completed')"
+            >
+              Complete
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
-    <Paginator :current-page="page" :total-items="total" :limit="limit" @page-change="onPageChange" />
   </div>
 </template>
 
 <script setup lang="ts">
-definePageMeta({ layout: 'dashboard', middleware: 'auth' })
-
-const { $api } = useNuxtApp()
-const toast = useToast()
+definePageMeta({ layout: 'admin', middleware: 'auth' })
 
 interface Order {
   id: string
   status: string
   order_type: string
   total_amount: number
-  payment_status: string
+  payment_status?: string
   customer_name?: string
   created_at?: string
+  notes?: string
+  items?: Array<{
+    menu_item_id?: string
+    name?: string
+    quantity: number
+    unit_price: number
+    subtotal?: number
+  }>
 }
 
-interface PaginatedData {
-  items: Order[]
-  total: number
-  page: number
-  limit: number
-}
+const { $api } = useNuxtApp()
+const toast = useToast()
 
-const filterStatus = ref('')
+const loading = ref(true)
 const orders = ref<Order[]>([])
-const page = ref(1)
-const total = ref(0)
-const limit = 20
+const searchQuery = ref('')
+const statusFilter = ref('')
+const selectedOrder = ref<Order | null>(null)
 
-const statusFilters = [
-  { label: 'All', value: '' },
-  { label: 'Pending', value: 'pending' },
-  { label: 'Confirmed', value: 'confirmed' },
-  { label: 'Preparing', value: 'preparing' },
-  { label: 'Ready', value: 'ready' },
-  { label: 'Completed', value: 'completed' },
-]
-
-const filteredOrders = computed(() =>
-  filterStatus.value ? orders.value.filter(o => o.status === filterStatus.value) : orders.value
-)
-
-async function fetchOrders() {
-  try {
-    const res = await $api(`/api/orders/by-chain?page=${page.value}&limit=${limit}`)
-    const data = (res as any).data as PaginatedData
-    orders.value = data.items || []
-    total.value = data.total
-  } catch (e: any) {
-    toast.show(e?.data?.message || 'Failed to load orders')
+const filteredOrders = computed(() => {
+  let result = orders.value
+  if (statusFilter.value) {
+    result = result.filter(o => o.status === statusFilter.value)
   }
-}
-
-async function updateStatus(id: string, status: string) {
-  try {
-    await $api(`/api/orders/status?id=${id}`, { method: 'POST', body: { status } })
-    await fetchOrders()
-  } catch (e: any) {
-    toast.show(e?.data?.message || 'Failed to update order')
+  if (searchQuery.value) {
+    const q = searchQuery.value.toLowerCase()
+    result = result.filter(o =>
+      (o.id || '').toLowerCase().includes(q) ||
+      (o.customer_name || '').toLowerCase().includes(q)
+    )
   }
-}
+  return result
+})
 
-async function processPayment(id: string) {
-  try {
-    await $api(`/api/orders/pay?id=${id}`, { method: 'POST', body: { method: 'cash' } })
-    await fetchOrders()
-  } catch (e: any) {
-    toast.show(e?.data?.message || 'Payment failed')
-  }
-}
-
-function onPageChange(p: number) {
-  page.value = p
-  fetchOrders()
-}
-
-function statusClass(status: string) {
-  const map: Record<string, string> = {
-    pending: 'bg-yellow-600',
-    confirmed: 'bg-blue-600',
-    preparing: 'bg-purple-600',
-    ready: 'bg-green-600',
-    completed: 'bg-dark-500 text-dark-200',
-  }
-  return map[status] || 'bg-dark-500'
-}
-
-function formatPrice(price: number) {
-  return price.toLocaleString('id-ID')
-}
+function formatPrice(price: number) { return price.toLocaleString('id-ID') }
 
 function formatDate(dateStr: string) {
+  if (!dateStr) return ''
   const d = new Date(dateStr)
   return d.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
 }
 
-fetchOrders()
+function getTimeAgo(dateStr: string) {
+  if (!dateStr) return ''
+  const diff = Date.now() - new Date(dateStr).getTime()
+  const mins = Math.floor(diff / 60000)
+  if (mins < 1) return 'Just now'
+  if (mins < 60) return `${mins}m ago`
+  const hrs = Math.floor(mins / 60)
+  return `${hrs}h ${mins % 60}m ago`
+}
+
+const statusColors: Record<string, string> = {
+  pending: 'border-l-yellow-500',
+  confirmed: 'border-l-blue-500',
+  preparing: 'border-l-purple-500',
+  ready: 'border-l-green-500',
+  completed: 'border-l-gray-400',
+  cancelled: 'border-l-red-500',
+}
+
+function statusBorder(status: string) {
+  return statusColors[status] || 'border-l-[var(--color-border)]'
+}
+
+function selectOrder(order: Order) { selectedOrder.value = order }
+
+async function fetchOrders() {
+  try {
+    const res = await $api('/api/orders/by-chain?page=1&limit=50')
+    const data = (res as any).data || { items: [] }
+    orders.value = (data.items || []).sort((a: Order, b: Order) => {
+      if (!a.created_at) return 1
+      if (!b.created_at) return -1
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    })
+    // Auto-select first pending order
+    if (!selectedOrder.value && orders.value.length > 0) {
+      selectedOrder.value = orders.value[0]
+    }
+  } catch (e: any) { toast.show(e?.data?.message || 'Failed to load orders') }
+}
+
+async function updateStatus(status: string) {
+  if (!selectedOrder.value) return
+  try {
+    await $api(`/api/orders/status?id=${selectedOrder.value.id}`, { method: 'POST', body: { status } })
+    toast.show(`Order ${status}`)
+    await fetchOrders()
+    // Re-select to keep detail open
+    const updated = orders.value.find(o => o.id === selectedOrder.value?.id)
+    if (updated) selectedOrder.value = updated
+  } catch (e: any) { toast.show(e?.data?.message || 'Failed to update order') }
+}
+
+async function processPayment() {
+  if (!selectedOrder.value) return
+  try {
+    await $api(`/api/orders/pay?id=${selectedOrder.value.id}`, { method: 'POST', body: { method: 'cash' } })
+    toast.show('Payment recorded')
+    await fetchOrders()
+    const updated = orders.value.find(o => o.id === selectedOrder.value?.id)
+    if (updated) selectedOrder.value = updated
+  } catch (e: any) { toast.show(e?.data?.message || 'Payment failed') }
+}
+
+onMounted(async () => {
+  loading.value = true
+  await fetchOrders()
+  loading.value = false
+})
 </script>
+
+<style scoped>
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.animate-shimmer { animation: shimmer 1.5s ease-in-out infinite; }
+</style>

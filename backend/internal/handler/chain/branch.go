@@ -47,7 +47,7 @@ func (h *BranchHandler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response.JSON(w, http.StatusCreated, branch)
+	response.Created(w, branch)
 }
 
 func (h *BranchHandler) ListByChain(w http.ResponseWriter, r *http.Request) {
@@ -68,5 +68,5 @@ func (h *BranchHandler) ListByChain(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response.JSON(w, http.StatusOK, branches)
+	response.Success(w, branches)
 }

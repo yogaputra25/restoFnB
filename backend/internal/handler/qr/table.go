@@ -60,7 +60,7 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		response.Error(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-	response.JSON(w, http.StatusCreated, t)
+	response.Created(w, t)
 }
 
 func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
@@ -87,7 +87,7 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 		response.Error(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-	response.JSON(w, http.StatusOK, t)
+	response.Success(w, t)
 }
 
 func (h *Handler) RegenerateQr(w http.ResponseWriter, r *http.Request) {
@@ -105,7 +105,7 @@ func (h *Handler) RegenerateQr(w http.ResponseWriter, r *http.Request) {
 		response.Error(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-	response.JSON(w, http.StatusOK, t)
+	response.Success(w, t)
 }
 
 func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) {
@@ -122,7 +122,7 @@ func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) {
 		response.Error(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-	response.JSON(w, http.StatusOK, map[string]string{"status": "deleted"})
+	response.Success(w, map[string]string{"status": "deleted"})
 }
 
 func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
@@ -140,5 +140,5 @@ func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 		response.Error(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-	response.JSON(w, http.StatusOK, tables)
+	response.Success(w, tables)
 }

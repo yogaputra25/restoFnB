@@ -17,29 +17,51 @@ function parseJwt(token: string) {
   }
 }
 
+function isExpired(token: string): boolean {
+  const payload = parseJwt(token)
+  if (!payload || !payload.exp) return true
+  return Date.now() / 1000 > payload.exp
+}
+
 export const useAuthStore = defineStore('auth', () => {
   const user = ref<User | null>(null)
   const accessToken = ref<string | null>(null)
   const refreshToken = ref<string | null>(null)
+  const restoring = ref(true) // true during initial session restore
 
-  if (import.meta.server) {
+  // --- Hydrate from cookie on both server AND client ---
+  function hydrateFromCookie() {
     const cookie = useCookie('auth_token')
-    if (cookie.value) {
-      const payload = parseJwt(cookie.value)
-      if (payload && payload.sub && payload.exp > Date.now() / 1000) {
-        accessToken.value = cookie.value
-        user.value = {
-          id: payload.sub,
-          email: payload.email || '',
-          name: payload.name || payload.email || '',
-          role: payload.role,
-          chainId: payload.chain,
-        }
+    const token = cookie.value
+    if (!token || isExpired(token)) {
+      if (token) cookie.value = null // clear expired
+      return
+    }
+    accessToken.value = token
+    const payload = parseJwt(token)
+    if (payload) {
+      user.value = {
+        id: payload.sub,
+        email: payload.email || '',
+        name: payload.name || payload.email || '',
+        role: payload.role,
+        chainId: payload.chain,
       }
     }
   }
 
-  const isAuthenticated = computed(() => !!accessToken.value)
+  // SSR: hydrate immediately
+  if (import.meta.server) {
+    hydrateFromCookie()
+  }
+
+  // Client: hydrate from Pinia SSR state first, then fallback to cookie
+  // (SSR state may be lost on some navigations; cookie is the backup)
+  if (import.meta.client && !accessToken.value) {
+    hydrateFromCookie()
+  }
+
+  const isAuthenticated = computed(() => !!accessToken.value && !isExpired(accessToken.value))
   const isAdmin = computed(() => user.value?.role === 'admin')
   const isCashier = computed(() => user.value?.role === 'cashier')
 
@@ -66,17 +88,29 @@ export const useAuthStore = defineStore('auth', () => {
     cookie.value = accessToken.value
   }
 
+  function setSession(token: string, userData: User) {
+    accessToken.value = token
+    user.value = userData
+    const cookie = useCookie('auth_token', {
+      maxAge: 60 * 15,
+      sameSite: 'lax',
+      path: '/',
+    })
+    cookie.value = token
+  }
+
   function logout() {
     user.value = null
     accessToken.value = null
     refreshToken.value = null
     const cookie = useCookie('auth_token')
     cookie.value = null
+    restoring.value = false
   }
 
   return {
-    user, accessToken, refreshToken,
+    user, accessToken, refreshToken, restoring,
     isAuthenticated, isAdmin, isCashier,
-    login, logout,
+    login, logout, setSession, hydrateFromCookie,
   }
 })

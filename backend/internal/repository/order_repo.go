@@ -143,6 +143,132 @@ func (r *OrderRepo) UpdateStatus(id, status string) error {
 	return err
 }
 
+func (r *OrderRepo) GetSalesReport(chainID, period, from, to string) (*domain.SalesReportResponse, error) {
+	dateTrunc := "day"
+	switch period {
+	case "monthly":
+		dateTrunc = "month"
+	case "yearly":
+		dateTrunc = "year"
+	}
+
+	report := &domain.SalesReportResponse{
+		Period: period,
+		From:   from,
+		To:     to,
+	}
+
+	err := r.db.QueryRow(`
+		SELECT
+			COALESCE(SUM(o.total_amount), 0),
+			COUNT(DISTINCT o.id),
+			COALESCE(SUM(oi.quantity), 0)
+		FROM orders o
+		JOIN order_items oi ON oi.order_id = o.id
+		WHERE o.chain_id = $1
+		  AND o.payment_status = 'paid'
+		  AND o.created_at >= $2::timestamp
+		  AND o.created_at < ($3::timestamp + INTERVAL '1 day')
+	`, chainID, from, to).Scan(&report.Summary.TotalRevenue, &report.Summary.TotalOrders, &report.Summary.TotalItems)
+	if err != nil {
+		return nil, err
+	}
+
+	rows, err := r.db.Query(`
+		WITH ranked AS (
+			SELECT
+				c.id AS category_id,
+				c.name AS category_name,
+				mi.id AS menu_item_id,
+				mi.name,
+				SUM(oi.quantity) AS quantity,
+				SUM(oi.subtotal) AS revenue,
+				ROW_NUMBER() OVER (PARTITION BY c.id ORDER BY SUM(oi.quantity) DESC) AS rn
+		 FROM order_items oi
+		 JOIN orders o ON o.id = oi.order_id
+		 JOIN menu_items mi ON mi.id = oi.menu_item_id
+		 JOIN categories c ON c.id = mi.category_id
+		 WHERE o.chain_id = $1
+		   AND o.payment_status = 'paid'
+		   AND o.created_at >= $2::timestamp
+		   AND o.created_at < ($3::timestamp + INTERVAL '1 day')
+		 GROUP BY c.id, c.name, mi.id, mi.name
+		)
+		SELECT category_id, category_name, menu_item_id, name, quantity, revenue
+		FROM ranked WHERE rn <= 10
+		ORDER BY category_name, quantity DESC
+	`, chainID, from, to)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	categoryMap := make(map[string]*domain.SalesReportCategory)
+	var categoryOrder []string
+	for rows.Next() {
+		var catID, catName, itemID, itemName string
+		var qty int
+		var rev float64
+		if err := rows.Scan(&catID, &catName, &itemID, &itemName, &qty, &rev); err != nil {
+			return nil, err
+		}
+		cat, ok := categoryMap[catID]
+		if !ok {
+			cat = &domain.SalesReportCategory{
+				CategoryID:   catID,
+				CategoryName: catName,
+				Items:        []domain.SalesReportItem{},
+			}
+			categoryMap[catID] = cat
+			categoryOrder = append(categoryOrder, catID)
+		}
+		cat.Items = append(cat.Items, domain.SalesReportItem{
+			MenuItemID: itemID,
+			Name:       itemName,
+			Quantity:   qty,
+			Revenue:    rev,
+		})
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	for _, id := range categoryOrder {
+		report.Categories = append(report.Categories, *categoryMap[id])
+	}
+
+	bRows, err := r.db.Query(`
+		SELECT
+			to_char(date_trunc($4, created_at), 'YYYY-MM-DD') AS date,
+			COALESCE(SUM(total_amount), 0),
+			COUNT(*)
+		FROM orders
+		WHERE chain_id = $1
+		  AND payment_status = 'paid'
+		  AND created_at >= $2::timestamp
+		  AND created_at < ($3::timestamp + INTERVAL '1 day')
+		GROUP BY date_trunc($4, created_at)
+		ORDER BY date
+	`, chainID, from, to, dateTrunc)
+	if err != nil {
+		return nil, err
+	}
+	defer bRows.Close()
+
+	for bRows.Next() {
+		var d domain.SalesReportDaily
+		if err := bRows.Scan(&d.Date, &d.Revenue, &d.Orders); err != nil {
+			return nil, err
+		}
+		report.DailyBreakdown = append(report.DailyBreakdown, d)
+	}
+	if err := bRows.Err(); err != nil {
+		return nil, err
+	}
+
+	return report, nil
+}
+
 func (r *OrderRepo) UpdatePayment(id, status, method string) error {
 	_, err := r.db.Exec(
 		`UPDATE orders SET payment_status=$1, payment_method=$2, updated_at=NOW() WHERE id=$3`,

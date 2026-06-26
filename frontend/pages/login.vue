@@ -1,37 +1,29 @@
 <template>
-  <div class="min-h-screen bg-dark-900 flex items-center justify-center">
-    <div class="bg-dark-700 p-8 rounded-lg w-full max-w-md">
-      <h1 class="text-2xl font-bold text-primary-500 mb-6 text-center">restoFnB</h1>
+  <div class="min-h-screen bg-[var(--color-background)] flex items-center justify-center px-4">
+    <div class="bg-[var(--color-surface)] p-8 rounded-[var(--radius-card)] w-full max-w-md shadow-[var(--shadow-md)]" data-aos="fade-up">
+      <h1 class="font-heading text-page-title text-[var(--color-primary)] mb-8 text-center">restoFnB</h1>
 
-      <form @submit.prevent="handleLogin" class="space-y-4">
-        <div>
-          <label class="block text-sm text-dark-200 mb-1">Email</label>
-          <input
-            v-model="email"
-            type="email"
-            class="w-full px-3 py-2 rounded bg-dark-600 text-white border border-dark-400 focus:border-primary-500 outline-none"
-            required
-          />
-        </div>
+      <form @submit.prevent="handleLogin" class="space-y-5">
+        <AppInput
+          v-model="email"
+          label="Email"
+          type="email"
+          floating
+          required
+        />
 
-        <div>
-          <label class="block text-sm text-dark-200 mb-1">Password</label>
-          <input
-            v-model="password"
-            type="password"
-            class="w-full px-3 py-2 rounded bg-dark-600 text-white border border-dark-400 focus:border-primary-500 outline-none"
-            required
-          />
-        </div>
+        <AppInput
+          v-model="password"
+          label="Password"
+          type="password"
+          floating
+          required
+          :error="error"
+        />
 
-        <p v-if="error" class="text-red-400 text-sm">{{ error }}</p>
-
-        <button
-          type="submit"
-          class="w-full py-2 rounded bg-primary-500 text-white font-semibold hover:bg-primary-600 transition"
-        >
+        <AppButton variant="primary" size="lg" type="submit" class="w-full">
           Login
-        </button>
+        </AppButton>
       </form>
     </div>
   </div>

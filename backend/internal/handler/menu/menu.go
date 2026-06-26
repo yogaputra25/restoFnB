@@ -46,7 +46,7 @@ func (h *CategoryHandler) Create(w http.ResponseWriter, r *http.Request) {
 		response.Error(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-	response.JSON(w, http.StatusCreated, cat)
+	response.Created(w, cat)
 }
 
 func (h *CategoryHandler) List(w http.ResponseWriter, r *http.Request) {
@@ -64,7 +64,7 @@ func (h *CategoryHandler) List(w http.ResponseWriter, r *http.Request) {
 		response.Error(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-	response.JSON(w, http.StatusOK, cats)
+	response.Success(w, cats)
 }
 
 type MenuItemHandler struct {
@@ -110,7 +110,7 @@ func (h *MenuItemHandler) Create(w http.ResponseWriter, r *http.Request) {
 		response.Error(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-	response.JSON(w, http.StatusCreated, item)
+	response.Created(w, item)
 }
 
 func (h *MenuItemHandler) ListPublic(w http.ResponseWriter, r *http.Request) {
@@ -128,7 +128,7 @@ func (h *MenuItemHandler) ListPublic(w http.ResponseWriter, r *http.Request) {
 		response.Error(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-	response.JSON(w, http.StatusOK, items)
+	response.Success(w, items)
 }
 
 func (h *MenuItemHandler) List(w http.ResponseWriter, r *http.Request) {
@@ -146,7 +146,7 @@ func (h *MenuItemHandler) List(w http.ResponseWriter, r *http.Request) {
 		response.Error(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-	response.JSON(w, http.StatusOK, items)
+	response.Success(w, items)
 }
 
 type VariantHandler struct {
@@ -184,7 +184,7 @@ func (h *VariantHandler) Create(w http.ResponseWriter, r *http.Request) {
 		response.Error(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-	response.JSON(w, http.StatusCreated, v)
+	response.Created(w, v)
 }
 
 func (h *VariantHandler) List(w http.ResponseWriter, r *http.Request) {
@@ -202,7 +202,7 @@ func (h *VariantHandler) List(w http.ResponseWriter, r *http.Request) {
 		response.Error(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-	response.JSON(w, http.StatusOK, variants)
+	response.Success(w, variants)
 }
 
 type idRequest struct {
@@ -230,7 +230,7 @@ func (h *CategoryHandler) Delete(w http.ResponseWriter, r *http.Request) {
 		response.Error(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-	response.JSON(w, http.StatusOK, map[string]string{"message": "deleted"})
+	response.Success(w, map[string]string{"message": "deleted"})
 }
 
 func (h *CategoryHandler) Update(w http.ResponseWriter, r *http.Request) {
@@ -248,7 +248,7 @@ func (h *CategoryHandler) Update(w http.ResponseWriter, r *http.Request) {
 		response.Error(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-	response.JSON(w, http.StatusOK, cat)
+	response.Success(w, cat)
 }
 
 type menuItemUpdateRequest struct {
@@ -275,7 +275,7 @@ func (h *MenuItemHandler) Delete(w http.ResponseWriter, r *http.Request) {
 		response.Error(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-	response.JSON(w, http.StatusOK, map[string]string{"message": "deleted"})
+	response.Success(w, map[string]string{"message": "deleted"})
 }
 
 func (h *MenuItemHandler) Update(w http.ResponseWriter, r *http.Request) {
@@ -293,7 +293,7 @@ func (h *MenuItemHandler) Update(w http.ResponseWriter, r *http.Request) {
 		response.Error(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-	response.JSON(w, http.StatusOK, item)
+	response.Success(w, item)
 }
 
 type AvailabilityHandler struct {
@@ -329,7 +329,7 @@ func (h *AvailabilityHandler) Set(w http.ResponseWriter, r *http.Request) {
 		response.Error(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-	response.JSON(w, http.StatusOK, ba)
+	response.Success(w, ba)
 }
 
 func (h *AvailabilityHandler) Get(w http.ResponseWriter, r *http.Request) {
@@ -347,5 +347,5 @@ func (h *AvailabilityHandler) Get(w http.ResponseWriter, r *http.Request) {
 		response.Error(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-	response.JSON(w, http.StatusOK, items)
+	response.Success(w, items)
 }

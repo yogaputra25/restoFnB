@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/resto-fnb/backend/internal/domain"
+	"github.com/resto-fnb/backend/internal/middleware"
 	"github.com/resto-fnb/backend/pkg/response"
 )
 
@@ -30,6 +31,7 @@ type AuthService interface {
 	Register(chainID string, branchID *string, email, password, name string, role domain.Role) (*domain.User, error)
 	Login(email, password string) (*domain.AuthTokens, error)
 	Refresh(refreshToken string) (*domain.AuthTokens, error)
+	GetProfile(userID string) (*domain.User, error)
 	ListStaff(chainID string) ([]domain.User, error)
 	DeactivateStaff(id string) error
 }
@@ -60,7 +62,7 @@ func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response.JSON(w, http.StatusCreated, user)
+	response.Created(w, user)
 }
 
 func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
@@ -81,7 +83,7 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response.JSON(w, http.StatusOK, tokens)
+	response.Success(w, tokens)
 }
 
 func (h *Handler) Refresh(w http.ResponseWriter, r *http.Request) {
@@ -102,7 +104,28 @@ func (h *Handler) Refresh(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response.JSON(w, http.StatusOK, tokens)
+	response.Success(w, tokens)
+}
+
+func (h *Handler) Me(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		response.Error(w, http.StatusMethodNotAllowed, "method not allowed")
+		return
+	}
+
+	user := middleware.GetUser(r)
+	if user == nil {
+		response.Error(w, http.StatusUnauthorized, "not authenticated")
+		return
+	}
+
+	profile, err := h.svc.GetProfile(user.ID)
+	if err != nil {
+		response.Error(w, http.StatusUnauthorized, err.Error())
+		return
+	}
+
+	response.Success(w, profile)
 }
 
 func (h *Handler) ListStaff(w http.ResponseWriter, r *http.Request) {
@@ -123,7 +146,7 @@ func (h *Handler) ListStaff(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response.JSON(w, http.StatusOK, users)
+	response.Success(w, users)
 }
 
 func (h *Handler) DeactivateStaff(w http.ResponseWriter, r *http.Request) {
@@ -143,5 +166,5 @@ func (h *Handler) DeactivateStaff(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response.JSON(w, http.StatusOK, map[string]string{"status": "deactivated"})
+	response.Success(w, map[string]string{"status": "deactivated"})
 }
