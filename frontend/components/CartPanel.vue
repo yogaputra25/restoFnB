@@ -1,109 +1,121 @@
 <template>
   <div class="bg-[var(--color-surface)] flex flex-col h-full">
-    <div class="flex items-center justify-between px-4 py-3 border-b border-[var(--color-border)]">
+    <div class="flex items-center justify-between px-4 py-3 border-b border-[var(--color-border)] shrink-0">
       <h2 class="font-heading text-card-title text-[var(--color-text-primary)]">Pesanan</h2>
       <button v-if="showClose" @click="$emit('close')" class="lg:hidden p-2 rounded-full hover:bg-[var(--color-surface-secondary)] text-[var(--color-text-secondary)] transition-colors">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-        </svg>
+        <X class="w-5 h-5" />
       </button>
     </div>
 
-    <div class="flex-1 overflow-y-auto px-4 py-3 space-y-3">
-      <AppEmptyState
-        v-if="items.length === 0"
-        title="Belum Ada Item"
-        description="Tambahkan menu dari daftar"
-      />
+    <div class="flex-1 flex flex-col overflow-hidden">
+      <!-- Items -->
+      <div class="flex-1 overflow-y-auto px-4 py-3 space-y-3">
+        <AppEmptyState
+          v-if="items.length === 0"
+          title="Belum Ada Item"
+          description="Tambahkan menu dari daftar"
+        />
 
-      <div v-for="item in items" :key="item.id"
-        class="flex items-center gap-3 bg-[var(--color-surface-secondary)] rounded-[var(--radius-card)] p-3"
-      >
-        <div v-if="item.image_url" class="w-12 h-12 rounded-[var(--radius-image)] overflow-hidden flex-shrink-0 bg-[var(--color-border)]">
-          <img :src="item.image_url" :alt="item.name" class="w-full h-full object-cover" loading="lazy" />
-        </div>
-        <div class="flex-1 min-w-0">
-          <p class="font-medium text-sm text-[var(--color-text-primary)] truncate">{{ item.name }}</p>
-          <p class="text-xs text-[var(--color-text-secondary)] mt-0.5">Rp{{ formatPrice(item.price) }}</p>
-        </div>
-        <div class="flex items-center gap-2 flex-shrink-0">
-          <button @click="cart.updateQuantity(item.id, item.quantity - 1)"
-            class="w-7 h-7 rounded-full bg-[var(--color-border)] flex items-center justify-center text-[var(--color-text-secondary)] hover:bg-[var(--color-text-secondary)] hover:text-white transition-colors text-sm font-bold">
-            -
-          </button>
-          <span class="w-6 text-center font-semibold text-sm text-[var(--color-text-primary)]">{{ item.quantity }}</span>
-          <button @click="cart.updateQuantity(item.id, item.quantity + 1)"
-            class="w-7 h-7 rounded-full bg-[var(--color-primary)] flex items-center justify-center text-white hover:bg-[#a84e31] transition-colors text-sm font-bold">
-            +
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <div class="border-t border-[var(--color-border)] p-4 space-y-3">
-      <div class="flex justify-between items-center text-lg font-bold text-[var(--color-text-primary)]">
-        <span>Total</span>
-        <span class="text-[var(--color-primary)]">Rp{{ formatPrice(cart.total) }}</span>
-      </div>
-
-      <div v-if="items.length > 0" class="space-y-2">
-        <div>
-          <label class="text-xs font-medium text-[var(--color-text-secondary)] block mb-1">Tipe Pesanan</label>
-          <div class="flex gap-2">
-            <button @click="orderType = 'dine-in'"
-              :class="['flex-1 py-2 px-3 rounded-[var(--radius-button)] text-sm font-medium border transition-all duration-[var(--transition-fast)]',
-                orderType === 'dine-in' ? 'bg-[var(--color-primary)] text-white border-[var(--color-primary)]' : 'bg-white text-[var(--color-text-secondary)] border-[var(--color-border)] hover:border-[var(--color-primary)]']">
-              Makan di Tempat
+        <div v-for="item in items" :key="item.id"
+          class="flex items-center gap-3 bg-[var(--color-surface-secondary)] rounded-[var(--radius-card)] p-3"
+        >
+          <div v-if="item.image_url" class="w-12 h-12 rounded-[var(--radius-image)] overflow-hidden flex-shrink-0 bg-[var(--color-border)]">
+            <img :src="item.image_url" :alt="item.name" class="w-full h-full object-cover" loading="lazy" />
+          </div>
+          <div class="flex-1 min-w-0">
+            <p class="font-medium text-sm text-[var(--color-text-primary)] truncate">{{ item.name }}</p>
+            <p class="text-xs text-[var(--color-text-secondary)] mt-0.5">Rp{{ formatPrice(item.price) }}</p>
+          </div>
+          <div class="flex items-center gap-2 flex-shrink-0">
+            <button @click="cart.updateQuantity(item.id, item.quantity - 1)"
+              class="w-7 h-7 rounded-full bg-[var(--color-border)] flex items-center justify-center text-[var(--color-text-secondary)] hover:bg-[var(--color-text-secondary)] hover:text-white transition-colors text-sm font-bold">
+              -
             </button>
-            <button @click="orderType = 'takeaway'"
-              :class="['flex-1 py-2 px-3 rounded-[var(--radius-button)] text-sm font-medium border transition-all duration-[var(--transition-fast)]',
-                orderType === 'takeaway' ? 'bg-[var(--color-primary)] text-white border-[var(--color-primary)]' : 'bg-white text-[var(--color-text-secondary)] border-[var(--color-border)] hover:border-[var(--color-primary)]']">
-              Bungkus
+            <span class="w-6 text-center font-semibold text-sm text-[var(--color-text-primary)]">{{ item.quantity }}</span>
+            <button @click="cart.updateQuantity(item.id, item.quantity + 1)"
+              class="w-7 h-7 rounded-full bg-[var(--color-primary)] flex items-center justify-center text-white hover:bg-[#a84e31] transition-colors text-sm font-bold">
+              +
             </button>
           </div>
         </div>
-
-        <div v-if="orderType === 'dine-in'">
-          <label class="text-xs font-medium text-[var(--color-text-secondary)] block mb-1">Nomor Meja</label>
-          <AppInput v-model="tableId" :placeholder="tableIdFromUrl || 'Masukkan nomor meja'" />
-          <p v-if="tableIdFromUrl && !tableId" class="text-xs text-[var(--color-text-secondary)] mt-1">
-            Terdeteksi dari QR: meja {{ tableIdFromUrl }}
-          </p>
-        </div>
-
-        <div>
-          <label class="text-xs font-medium text-[var(--color-text-secondary)] block mb-1">Nama Pemesan</label>
-          <AppInput v-model="customerName" placeholder="Masukkan nama Anda (opsional)" />
-        </div>
-
-        <div v-if="branchIdFromUrl">
-          <label class="text-xs font-medium text-[var(--color-text-secondary)] block mb-1">Cabang</label>
-          <div class="px-3 py-2 rounded-[var(--radius-input)] bg-green-50 border border-green-200 text-green-700 text-sm">
-            {{ branchIdFromUrl }}
-          </div>
-        </div>
-        <div v-else>
-          <label class="text-xs font-medium text-[var(--color-text-secondary)] block mb-1">ID Cabang (Branch)</label>
-          <AppInput v-model="branchId" placeholder="Masukkan ID cabang" />
-        </div>
       </div>
 
-      <AppButton
-        variant="primary"
-        size="lg"
-        class="w-full"
-        :loading="submitting"
-        :disabled="items.length === 0"
-        @click="submitOrder"
-      >
-        {{ submitting ? 'Memproses...' : 'Pesan Sekarang' }}
-      </AppButton>
+      <!-- Total + Form (sticky bottom) -->
+      <div v-if="items.length > 0" class="border-t border-[var(--color-border)] p-4 space-y-3 shrink-0">
+        <div class="flex justify-between items-center text-lg font-bold text-[var(--color-text-primary)]">
+          <span>Total</span>
+          <span class="text-[var(--color-primary)]">Rp{{ formatPrice(cart.total) }}</span>
+        </div>
+
+        <div class="space-y-2">
+          <div>
+            <label class="text-xs font-medium text-[var(--color-text-secondary)] block mb-1">Tipe Pesanan</label>
+            <div class="flex gap-2">
+              <button @click="orderType = 'dine-in'"
+                :class="['flex-1 py-2 px-3 rounded-[var(--radius-button)] text-sm font-medium border transition-all duration-[var(--transition-fast)]',
+                  orderType === 'dine-in' ? 'bg-[var(--color-primary)] text-white border-[var(--color-primary)]' : 'bg-white text-[var(--color-text-secondary)] border-[var(--color-border)] hover:border-[var(--color-primary)]']">
+                Makan di Tempat
+              </button>
+              <button @click="orderType = 'takeaway'"
+                :class="['flex-1 py-2 px-3 rounded-[var(--radius-button)] text-sm font-medium border transition-all duration-[var(--transition-fast)]',
+                  orderType === 'takeaway' ? 'bg-[var(--color-primary)] text-white border-[var(--color-primary)]' : 'bg-white text-[var(--color-text-secondary)] border-[var(--color-border)] hover:border-[var(--color-primary)]']">
+                Bungkus
+              </button>
+            </div>
+          </div>
+
+          <div v-if="orderType === 'dine-in'">
+            <label class="text-xs font-medium text-[var(--color-text-secondary)] block mb-1">Nomor Meja</label>
+            <AppInput v-model="tableId" :placeholder="tableIdFromUrl || 'Masukkan nomor meja'" />
+            <p v-if="tableIdFromUrl && !tableId" class="text-xs text-[var(--color-text-secondary)] mt-1">
+              Terdeteksi dari QR: meja {{ tableIdFromUrl }}
+            </p>
+          </div>
+
+          <div>
+            <label class="text-xs font-medium text-[var(--color-text-secondary)] block mb-1">Nama Pemesan</label>
+            <AppInput v-model="customerName" placeholder="Masukkan nama Anda (opsional)" />
+          </div>
+
+          <div v-if="branchIdFromUrl">
+            <label class="text-xs font-medium text-[var(--color-text-secondary)] block mb-1">Cabang</label>
+            <div class="px-3 py-2 rounded-[var(--radius-input)] bg-green-50 border border-green-200 text-green-700 text-sm">
+              {{ branchIdFromUrl }}
+            </div>
+          </div>
+          <div v-else>
+            <label class="text-xs font-medium text-[var(--color-text-secondary)] block mb-1">ID Cabang (Branch)</label>
+            <AppInput v-model="branchId" placeholder="Masukkan ID cabang" />
+          </div>
+
+          <!-- Notes -->
+          <div>
+            <label class="text-xs font-medium text-[var(--color-text-secondary)] block mb-1">Catatan</label>
+            <textarea v-model="notes" placeholder="Contoh: Tidak pakai bawang, level pedas 2, dll"
+              class="w-full px-3 py-2 rounded-[var(--radius-input)] text-sm bg-[var(--color-surface-secondary)] text-[var(--color-text-primary)] border border-[var(--color-border)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] resize-none"
+              rows="2"
+            ></textarea>
+          </div>
+        </div>
+
+        <AppButton
+          variant="primary"
+          size="lg"
+          class="w-full"
+          :loading="submitting"
+          :disabled="items.length === 0"
+          @click="submitOrder"
+        >
+          {{ submitting ? 'Memproses...' : 'Pesan Sekarang' }}
+        </AppButton>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { unref } from 'vue'
+import { X } from 'lucide-vue-next'
 import { useCart } from '~/composables/useCart'
 
 defineProps<{ showClose?: boolean }>()
@@ -123,6 +135,7 @@ const tableId = ref(tableIdFromUrl)
 const branchId = ref(branchIdFromUrl)
 const orderType = ref(tableIdFromUrl ? 'dine-in' : 'takeaway')
 const customerName = ref('')
+const notes = ref('')
 const submitting = ref(false)
 
 function formatPrice(price: number) {
@@ -153,8 +166,10 @@ async function submitOrder() {
     branch_id: actualBranchId,
     order_type: orderType.value,
     customer_name: customerName.value || undefined,
+    notes: notes.value || undefined,
     items: items.value.map(item => ({
       menu_item_id: item.id,
+      variant_id: item.variant_id || undefined,
       quantity: item.quantity,
       unit_price: item.price,
     })),

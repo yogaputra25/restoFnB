@@ -15,19 +15,21 @@ type Order struct {
 	PaymentStatus string    `json:"payment_status"`
 	PaymentMethod *string   `json:"payment_method,omitempty"`
 	TotalAmount   float64   `json:"total_amount"`
+	Notes         string    `json:"notes,omitempty"`
 	Items         []OrderItem `json:"items,omitempty"`
 	CreatedAt     time.Time `json:"created_at"`
 	UpdatedAt     time.Time `json:"updated_at"`
 }
 
 type OrderItem struct {
-	ID        string  `json:"id"`
-	OrderID   string  `json:"order_id"`
-	MenuItemID string `json:"menu_item_id"`
-	VariantID *string `json:"variant_id,omitempty"`
-	Quantity  int     `json:"quantity"`
-	UnitPrice float64 `json:"unit_price"`
-	Subtotal  float64 `json:"subtotal"`
+	ID          string  `json:"id"`
+	OrderID     string  `json:"order_id"`
+	MenuItemID  string  `json:"menu_item_id"`
+	VariantID   *string `json:"variant_id,omitempty"`
+	VariantName string  `json:"variant_name,omitempty"`
+	Quantity    int     `json:"quantity"`
+	UnitPrice   float64 `json:"unit_price"`
+	Subtotal    float64 `json:"subtotal"`
 }
 
 type OrderStore interface {

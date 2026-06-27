@@ -18,6 +18,7 @@ export default defineNuxtPlugin(() => {
           name: payload?.name || auth.user?.name || '',
           role: payload?.role || auth.user?.role || 'customer',
           chainId: payload?.chain || auth.user?.chainId || '',
+          branchId: payload?.branch || auth.user?.branchId || undefined,
         })
         if (data.refresh_token) {
           auth.refreshToken = data.refresh_token

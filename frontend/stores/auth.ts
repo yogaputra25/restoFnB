@@ -6,6 +6,7 @@ interface User {
   name: string
   role: 'admin' | 'cashier' | 'customer'
   chainId: string
+  branchId?: string
 }
 
 function parseJwt(token: string) {
@@ -27,43 +28,64 @@ export const useAuthStore = defineStore('auth', () => {
   const user = ref<User | null>(null)
   const accessToken = ref<string | null>(null)
   const refreshToken = ref<string | null>(null)
-  const restoring = ref(true) // true during initial session restore
 
-  // --- Hydrate from cookie on both server AND client ---
-  function hydrateFromCookie() {
-    const cookie = useCookie('auth_token')
-    const token = cookie.value
-    if (!token || isExpired(token)) {
-      if (token) cookie.value = null // clear expired
-      return
-    }
-    accessToken.value = token
-    const payload = parseJwt(token)
-    if (payload) {
-      user.value = {
-        id: payload.sub,
-        email: payload.email || '',
-        name: payload.name || payload.email || '',
-        role: payload.role,
-        chainId: payload.chain,
-      }
-    }
-  }
-
-  // SSR: hydrate immediately
-  if (import.meta.server) {
-    hydrateFromCookie()
-  }
-
-  // Client: hydrate from Pinia SSR state first, then fallback to cookie
-  // (SSR state may be lost on some navigations; cookie is the backup)
-  if (import.meta.client && !accessToken.value) {
-    hydrateFromCookie()
-  }
-
-  const isAuthenticated = computed(() => !!accessToken.value && !isExpired(accessToken.value))
+  const isAuthenticated = computed(() => !!accessToken.value)
   const isAdmin = computed(() => user.value?.role === 'admin')
   const isCashier = computed(() => user.value?.role === 'cashier')
+
+  function persist() {
+    if (import.meta.client) {
+      try {
+        if (accessToken.value) {
+          localStorage.setItem('auth_token', accessToken.value)
+          localStorage.setItem('refresh_token', refreshToken.value || '')
+          const enc = (v: string) => encodeURIComponent(v)
+          document.cookie = `auth_token=${enc(accessToken.value)}; path=/; max-age=${60*60*24*7}; SameSite=Lax`
+          document.cookie = `refresh_token=${enc(refreshToken.value || '')}; path=/; max-age=${60*60*24*7}; SameSite=Lax`
+        } else {
+          localStorage.removeItem('auth_token')
+          localStorage.removeItem('refresh_token')
+          document.cookie = 'auth_token=; path=/; max-age=0; SameSite=Lax'
+          document.cookie = 'refresh_token=; path=/; max-age=0; SameSite=Lax'
+        }
+      } catch { /* ignore */ }
+    }
+  }
+
+  function tryRestore() {
+    if (import.meta.client && !accessToken.value) {
+      try {
+        const stored = localStorage.getItem('auth_token')
+        if (stored && !isExpired(stored)) {
+          const payload = parseJwt(stored)
+          if (payload) {
+            accessToken.value = stored
+            user.value = {
+              id: payload.sub,
+              email: payload.email || '',
+              name: payload.name || payload.email || '',
+              role: payload.role,
+              chainId: payload.chain,
+              branchId: payload.branch || undefined,
+            }
+            const rt = localStorage.getItem('refresh_token')
+            if (rt) refreshToken.value = rt
+            return true
+          }
+        } else if (stored) {
+          localStorage.removeItem('auth_token')
+          localStorage.removeItem('refresh_token')
+        }
+      } catch { /* ignore */ }
+    }
+    return false
+  }
+
+  function setSession(token: string, userData: User) {
+    accessToken.value = token
+    user.value = userData
+    persist()
+  }
 
   async function login(email: string, password: string) {
     const res = await $fetch('/api/auth/login', {
@@ -76,41 +98,29 @@ export const useAuthStore = defineStore('auth', () => {
     refreshToken.value = data.data.refresh_token
 
     const payload = parseJwt(accessToken.value)
-    user.value = payload
-      ? { id: payload.sub, email: payload.email || '', name: payload.name || payload.email || '', role: payload.role, chainId: payload.chain }
-      : null
-
-    const cookie = useCookie('auth_token', {
-      maxAge: 60 * 15,
-      sameSite: 'lax',
-      path: '/',
-    })
-    cookie.value = accessToken.value
-  }
-
-  function setSession(token: string, userData: User) {
-    accessToken.value = token
-    user.value = userData
-    const cookie = useCookie('auth_token', {
-      maxAge: 60 * 15,
-      sameSite: 'lax',
-      path: '/',
-    })
-    cookie.value = token
+    if (payload) {
+      user.value = {
+        id: payload.sub,
+        email: payload.email || '',
+        name: payload.name || payload.email || '',
+        role: payload.role,
+        chainId: payload.chain,
+        branchId: payload.branch || undefined,
+      }
+    }
+    persist()
   }
 
   function logout() {
     user.value = null
     accessToken.value = null
     refreshToken.value = null
-    const cookie = useCookie('auth_token')
-    cookie.value = null
-    restoring.value = false
+    persist()
   }
 
   return {
-    user, accessToken, refreshToken, restoring,
+    user, accessToken, refreshToken,
     isAuthenticated, isAdmin, isCashier,
-    login, logout, setSession, hydrateFromCookie,
+    setSession, login, logout,
   }
 })

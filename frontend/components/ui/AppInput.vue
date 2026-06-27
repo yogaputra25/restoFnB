@@ -49,7 +49,7 @@
 
     <!-- Error message -->
     <p v-if="error" class="mt-1 text-xs text-[var(--color-danger)] flex items-center gap-1">
-      <span>⚠</span> {{ error }}
+      <AlertTriangle class="w-3 h-3" /> {{ error }}
     </p>
 
     <!-- Hint text -->
@@ -58,6 +58,7 @@
 </template>
 
 <script setup lang="ts">
+import { AlertTriangle } from 'lucide-vue-next'
 const props = defineProps<{
   modelValue: string
   label?: string

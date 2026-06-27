@@ -205,6 +205,23 @@ func (h *VariantHandler) List(w http.ResponseWriter, r *http.Request) {
 	response.Success(w, variants)
 }
 
+func (h *VariantHandler) Delete(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		response.Error(w, http.StatusMethodNotAllowed, "method not allowed")
+		return
+	}
+	var req idRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		response.Error(w, http.StatusBadRequest, "invalid JSON")
+		return
+	}
+	if err := h.delete(req.ID); err != nil {
+		response.Error(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	response.Success(w, map[string]string{"status": "deleted"})
+}
+
 type idRequest struct {
 	ID string `json:"id"`
 }

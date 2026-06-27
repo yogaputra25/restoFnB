@@ -5,11 +5,12 @@
         <div
           v-for="toast in toasts"
           :key="toast.id"
-          class="px-4 py-3 rounded-lg shadow-lg text-sm text-white transition-all"
+          class="px-4 py-3 rounded-[var(--radius-button)] text-sm text-white transition-all"
+          :style="{ boxShadow: 'var(--shadow-lg)' }"
           :class="{
-            'bg-red-600': toast.type === 'error',
-            'bg-green-600': toast.type === 'success',
-            'bg-blue-600': toast.type === 'info',
+            'bg-[var(--color-danger)]': toast.type === 'error',
+            'bg-[var(--color-success)]': toast.type === 'success',
+            'bg-[var(--color-primary)]': toast.type === 'info',
           }"
         >
           {{ toast.message }}

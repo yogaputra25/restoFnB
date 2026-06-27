@@ -7,14 +7,14 @@
     <!-- Logo area -->
     <div class="flex items-center h-[72px] px-4 border-b border-[var(--color-border)] shrink-0">
       <div v-if="!collapsed" class="flex items-center gap-3">
-        <div class="w-8 h-8 rounded-lg bg-[var(--color-primary)] flex items-center justify-center text-white font-bold text-sm">RF</div>
+        <div class="w-8 h-8 rounded-[var(--radius-button)] bg-[var(--color-primary)] flex items-center justify-center text-white font-bold text-sm">RF</div>
         <div>
           <p class="font-heading font-bold text-[var(--color-text-primary)] leading-tight">RestoFnB</p>
           <p class="text-[10px] text-[var(--color-text-secondary)]">Management</p>
         </div>
       </div>
       <div v-else class="mx-auto">
-        <div class="w-8 h-8 rounded-lg bg-[var(--color-primary)] flex items-center justify-center text-white font-bold text-sm">RF</div>
+        <div class="w-8 h-8 rounded-[var(--radius-button)] bg-[var(--color-primary)] flex items-center justify-center text-white font-bold text-sm">RF</div>
       </div>
     </div>
 
@@ -27,7 +27,7 @@
             v-for="item in group.items"
             :key="item.to"
             :to="item.to"
-            class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-[var(--transition-fast)] group"
+            class="flex items-center gap-3 px-3 py-2.5 rounded-[var(--radius-button)] text-sm font-medium transition-all duration-[var(--transition-fast)] group"
             :class="isActive(item.to)
               ? 'bg-[var(--color-primary)]/5 text-[var(--color-primary)]'
               : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-secondary)] hover:text-[var(--color-text-primary)]'"
@@ -48,21 +48,17 @@
     <!-- Collapse + Logout -->
     <div class="border-t border-[var(--color-border)] p-3 space-y-1 shrink-0">
       <button
-        class="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sm font-medium text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-secondary)] hover:text-[var(--color-text-primary)] transition-all"
+        class="flex items-center gap-3 w-full px-3 py-2.5 rounded-[var(--radius-button)] text-sm font-medium text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-secondary)] hover:text-[var(--color-text-primary)] transition-all"
         @click="$emit('toggleCollapse')"
       >
-        <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
-        </svg>
+        <component :is="icon('ChevronLeft')" class="w-5 h-5 shrink-0" />
         <span v-if="!collapsed">Collapse</span>
       </button>
       <button
-        class="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sm font-medium text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-secondary)] hover:text-[var(--color-danger)] transition-all"
+        class="flex items-center gap-3 w-full px-3 py-2.5 rounded-[var(--radius-button)] text-sm font-medium text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-secondary)] hover:text-[var(--color-danger)] transition-all"
         @click="handleLogout"
       >
-        <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-        </svg>
+        <component :is="icon('LogOut')" class="w-5 h-5 shrink-0" />
         <span v-if="!collapsed">Logout</span>
       </button>
     </div>
@@ -77,13 +73,11 @@
           <!-- Mobile logo -->
           <div class="flex items-center justify-between h-[72px] px-4 border-b border-[var(--color-border)] shrink-0">
             <div class="flex items-center gap-3">
-              <div class="w-8 h-8 rounded-lg bg-[var(--color-primary)] flex items-center justify-center text-white font-bold text-sm">RF</div>
+              <div class="w-8 h-8 rounded-[var(--radius-button)] bg-[var(--color-primary)] flex items-center justify-center text-white font-bold text-sm">RF</div>
               <p class="font-heading font-bold text-[var(--color-text-primary)]">RestoFnB</p>
             </div>
             <button class="p-2 rounded-full hover:bg-[var(--color-surface-secondary)]" @click="$emit('closeMobile')">
-              <svg class="w-5 h-5 text-[var(--color-text-secondary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-              </svg>
+              <component :is="icon('X')" class="w-5 h-5 text-[var(--color-text-secondary)]" />
             </button>
           </div>
 
@@ -96,7 +90,7 @@
                   v-for="item in group.items"
                   :key="item.to"
                   :to="item.to"
-                  class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all"
+                  class="flex items-center gap-3 px-3 py-2.5 rounded-[var(--radius-button)] text-sm font-medium transition-all"
                   :class="isActive(item.to) ? 'bg-[var(--color-primary)]/5 text-[var(--color-primary)]' : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-secondary)]'"
                   @click="$emit('closeMobile')"
                 >

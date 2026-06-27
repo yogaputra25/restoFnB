@@ -12,9 +12,7 @@
           <div class="flex items-center justify-between px-6 py-4 border-b border-[var(--color-border)] shrink-0">
             <h2 class="font-heading text-[var(--font-size-section)] text-[var(--color-text-primary)]">{{ title }}</h2>
             <button class="p-2 rounded-full hover:bg-[var(--color-surface-secondary)] text-[var(--color-text-secondary)] transition-colors" @click="close">
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-              </svg>
+              <X class="w-5 h-5" />
             </button>
           </div>
 
@@ -29,6 +27,8 @@
 </template>
 
 <script setup lang="ts">
+import { X } from 'lucide-vue-next'
+
 withDefaults(defineProps<{
   open: boolean
   title?: string
@@ -47,7 +47,7 @@ function close() {
 onMounted(() => {
   const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') close() }
   document.addEventListener('keydown', handler)
-  onDestroy(() => document.removeEventListener('keydown', handler))
+  onUnmounted(() => document.removeEventListener('keydown', handler))
 })
 </script>
 

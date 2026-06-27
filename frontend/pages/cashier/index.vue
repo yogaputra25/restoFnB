@@ -8,9 +8,7 @@
         <!-- Toolbar -->
         <div class="flex items-center gap-3 mb-4 pb-3 border-b border-[var(--color-border)]">
           <div class="relative flex-1 max-w-xs">
-            <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-text-secondary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
+            <Search class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-text-secondary)]" />
             <input v-model="searchQuery" type="text" placeholder="Search orders..." class="w-full pl-9 pr-4 py-2 rounded-[var(--radius-input)] text-sm bg-[var(--color-surface-secondary)] text-[var(--color-text-primary)] border border-[var(--color-border)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]" />
           </div>
           <select v-model="statusFilter" class="px-3 py-2 rounded-[var(--radius-input)] text-sm bg-[var(--color-surface-secondary)] text-[var(--color-text-primary)] border border-[var(--color-border)] focus:outline-none">
@@ -56,7 +54,9 @@
                 <p class="text-sm font-medium text-[var(--color-text-primary)] truncate">{{ order.customer_name || 'Guest' }}</p>
                 <p class="text-xs text-[var(--color-text-secondary)] mt-0.5">
                   {{ getTimeAgo(order.created_at) }} · {{ order.items?.length || 0 }} items
+                  <span v-if="order.branch_id" class="ml-1.5 px-1 py-0.5 rounded bg-[var(--color-surface-secondary)] text-[10px]"><Building2 class="w-2.5 h-2.5 inline mr-0.5" />{{ getBranchName(order.branch_id) }}</span>
                 </p>
+                <p v-if="order.notes" class="text-xs text-[var(--color-text-secondary)] mt-0.5 truncate max-w-[200px]" :title="order.notes">{{ order.notes }}</p>
               </div>
               <div class="text-right shrink-0">
                 <p class="font-bold text-sm text-[var(--color-primary)]">Rp{{ formatPrice(order.total_amount) }}</p>
@@ -71,9 +71,7 @@
       <div class="w-[45%]">
         <div v-if="!selectedOrder" class="h-full flex items-center justify-center">
           <div class="text-center">
-            <svg class="w-16 h-16 mx-auto text-[var(--color-border)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-            </svg>
+            <ClipboardList class="w-16 h-16 mx-auto text-[var(--color-border)]" stroke-width="1.5" />
             <p class="mt-3 text-sm text-[var(--color-text-secondary)]">Select an order to view details</p>
           </div>
         </div>
@@ -84,6 +82,9 @@
             <div>
               <h3 class="font-heading text-card-title text-[var(--color-text-primary)]">Order #{{ selectedOrder.id?.slice(0, 8) }}</h3>
               <p class="text-xs text-[var(--color-text-secondary)]">{{ selectedOrder.customer_name || 'Guest' }} · {{ selectedOrder.order_type }} · {{ formatDate(selectedOrder.created_at) }}</p>
+              <p v-if="selectedOrder.branch_id" class="text-xs text-[var(--color-text-secondary)] mt-1">
+                <Building2 class="w-3 h-3 inline mr-0.5" />{{ getBranchName(selectedOrder.branch_id) }}
+              </p>
             </div>
             <StatusBadge :status="selectedOrder.status" />
           </div>
@@ -95,7 +96,7 @@
             <h4 class="text-sm font-semibold text-[var(--color-text-primary)] mb-2">Items</h4>
             <div class="space-y-2">
               <div v-for="(item, i) in selectedOrder.items" :key="i" class="flex items-center justify-between text-sm">
-                <span class="text-[var(--color-text-primary)]">{{ item.quantity }}x {{ item.name || `Item ${i + 1}` }}</span>
+                <span class="text-[var(--color-text-primary)]">{{ item.quantity }}x {{ item.name || `Item ${i + 1}` }}<span v-if="item.variant_name" class="text-[var(--color-text-secondary)]"> ({{ item.variant_name }})</span></span>
                 <span class="font-medium text-[var(--color-text-primary)]">Rp{{ formatPrice(item.subtotal || item.unit_price * item.quantity) }}</span>
               </div>
             </div>
@@ -125,35 +126,35 @@
           <div class="flex flex-wrap gap-2 pt-2">
             <button
               v-if="selectedOrder.status === 'pending'"
-              class="flex-1 min-w-[120px] py-2.5 rounded-[var(--radius-button)] bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 transition-all hover:scale-[1.02] active:scale-[0.98]"
+              class="flex-1 min-w-[120px] py-2.5 rounded-[var(--radius-button)] bg-[var(--color-primary)] text-white text-sm font-semibold hover:bg-[#a84e31] transition-all hover:scale-[1.03] active:scale-[0.98]"
               @click="updateStatus('confirmed')"
             >
               Confirm
             </button>
             <button
               v-if="selectedOrder.status === 'confirmed'"
-              class="flex-1 min-w-[120px] py-2.5 rounded-[var(--radius-button)] bg-purple-600 text-white text-sm font-semibold hover:bg-purple-700 transition-all hover:scale-[1.02] active:scale-[0.98]"
+              class="flex-1 min-w-[120px] py-2.5 rounded-[var(--radius-button)] bg-[var(--color-secondary)] text-white text-sm font-semibold hover:bg-[#b86205] transition-all hover:scale-[1.03] active:scale-[0.98]"
               @click="updateStatus('preparing')"
             >
               Prepare
             </button>
             <button
               v-if="selectedOrder.status === 'preparing'"
-              class="flex-1 min-w-[120px] py-2.5 rounded-[var(--radius-button)] bg-yellow-600 text-white text-sm font-semibold hover:bg-yellow-700 transition-all hover:scale-[1.02] active:scale-[0.98]"
+              class="flex-1 min-w-[120px] py-2.5 rounded-[var(--radius-button)] bg-[var(--color-accent)] text-white text-sm font-semibold hover:bg-[#d69e00] transition-all hover:scale-[1.03] active:scale-[0.98]"
               @click="updateStatus('ready')"
             >
               Ready
             </button>
             <button
               v-if="selectedOrder.status === 'ready' && selectedOrder.payment_status !== 'paid'"
-              class="flex-1 min-w-[120px] py-2.5 rounded-[var(--radius-button)] bg-[var(--color-primary)] text-white text-sm font-semibold hover:bg-[#a84e31] transition-all hover:scale-[1.02] active:scale-[0.98]"
+              class="flex-1 min-w-[120px] py-2.5 rounded-[var(--radius-button)] bg-[var(--color-primary)] text-white text-sm font-semibold hover:bg-[#a84e31] transition-all hover:scale-[1.03] active:scale-[0.98]"
               @click="processPayment"
             >
               Pay
             </button>
             <button
               v-if="selectedOrder.status === 'ready' && selectedOrder.payment_status === 'paid'"
-              class="flex-1 min-w-[120px] py-2.5 rounded-[var(--radius-button)] bg-[var(--color-success)] text-white text-sm font-semibold hover:bg-[#256d29] transition-all hover:scale-[1.02] active:scale-[0.98]"
+              class="flex-1 min-w-[120px] py-2.5 rounded-[var(--radius-button)] bg-[var(--color-success)] text-white text-sm font-semibold hover:bg-[#256d29] transition-all hover:scale-[1.03] active:scale-[0.98]"
               @click="updateStatus('completed')"
             >
               Complete
@@ -166,10 +167,12 @@
 </template>
 
 <script setup lang="ts">
+import { Search, ClipboardList, Building2 } from 'lucide-vue-next'
 definePageMeta({ layout: 'admin', middleware: 'auth' })
 
 interface Order {
   id: string
+  branch_id?: string
   status: string
   order_type: string
   total_amount: number
@@ -188,6 +191,13 @@ interface Order {
 
 const { $api } = useNuxtApp()
 const toast = useToast()
+const auth = useAuthStore()
+const { selectedBranchId, getBranchName, setBranch } = useBranchSelector()
+
+// Auto-select branch from logged-in user
+if (auth.user?.branchId) {
+  setBranch(auth.user.branchId)
+}
 
 const loading = ref(true)
 const orders = ref<Order[]>([])
@@ -245,7 +255,10 @@ function selectOrder(order: Order) { selectedOrder.value = order }
 
 async function fetchOrders() {
   try {
-    const res = await $api('/api/orders/by-chain?page=1&limit=50')
+    const endpoint = selectedBranchId.value
+      ? `/api/orders/by-branch?branch_id=${selectedBranchId.value}&page=1&limit=50`
+      : '/api/orders/by-chain?page=1&limit=50'
+    const res = await $api(endpoint)
     const data = (res as any).data || { items: [] }
     orders.value = (data.items || []).sort((a: Order, b: Order) => {
       if (!a.created_at) return 1
@@ -286,6 +299,10 @@ onMounted(async () => {
   loading.value = true
   await fetchOrders()
   loading.value = false
+})
+
+watch(selectedBranchId, () => {
+  fetchOrders()
 })
 </script>
 

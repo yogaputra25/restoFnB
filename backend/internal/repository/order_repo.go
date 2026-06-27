@@ -26,11 +26,11 @@ func (r *OrderRepo) Create(order *domain.Order) error {
 	defer tx.Rollback()
 
 	err = tx.QueryRow(
-		`INSERT INTO orders (chain_id, branch_id, table_id, customer_id, guest_id, customer_name, order_type, status, total_amount)
-		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+		`INSERT INTO orders (chain_id, branch_id, table_id, customer_id, guest_id, customer_name, order_type, status, total_amount, notes)
+		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
 		 RETURNING id, created_at, updated_at`,
 		order.ChainID, order.BranchID, order.TableID, order.CustomerID, order.GuestID,
-		order.CustomerName, order.OrderType, "pending", order.TotalAmount,
+		order.CustomerName, order.OrderType, "pending", order.TotalAmount, order.Notes,
 	).Scan(&order.ID, &order.CreatedAt, &order.UpdatedAt)
 	if err != nil {
 		return err
@@ -60,12 +60,35 @@ func (r *OrderRepo) GetByID(id string) (*domain.Order, error) {
 		        COALESCE(guest_id, '') as guest_id,
 		        COALESCE(customer_name, '') as customer_name,
 		        order_type, status, payment_status, payment_method,
-		        total_amount, created_at, updated_at
+		        total_amount, COALESCE(notes, ''), created_at, updated_at
 		 FROM orders WHERE id = $1`, id,
 	).Scan(&o.ID, &o.ChainID, &o.BranchID, &o.TableID, &o.CustomerID, &o.GuestID, &o.CustomerName,
-		&o.OrderType, &o.Status, &o.PaymentStatus, &o.PaymentMethod, &o.TotalAmount, &o.CreatedAt, &o.UpdatedAt)
+		&o.OrderType, &o.Status, &o.PaymentStatus, &o.PaymentMethod, &o.TotalAmount, &o.Notes, &o.CreatedAt, &o.UpdatedAt)
 	if err != nil {
 		return nil, err
+	}
+
+	// Load order items with variant names
+	rows, err := r.db.Query(
+		`SELECT oi.id, oi.order_id, oi.menu_item_id, oi.variant_id,
+		        COALESCE(iv.name, '') as variant_name,
+		        oi.quantity, oi.unit_price, oi.subtotal
+		 FROM order_items oi
+		 LEFT JOIN item_variants iv ON iv.id = oi.variant_id
+		 WHERE oi.order_id = $1`, id,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var item domain.OrderItem
+		if err := rows.Scan(&item.ID, &item.OrderID, &item.MenuItemID, &item.VariantID,
+			&item.VariantName, &item.Quantity, &item.UnitPrice, &item.Subtotal); err != nil {
+			return nil, err
+		}
+		o.Items = append(o.Items, item)
 	}
 	return o, nil
 }
@@ -84,7 +107,7 @@ func (r *OrderRepo) ListByBranchID(branchID string, page, limit int) ([]domain.O
 		        COALESCE(guest_id, '') as guest_id,
 		        COALESCE(customer_name, '') as customer_name,
 		        order_type, status, payment_status, payment_method,
-		        total_amount, created_at, updated_at
+		        total_amount, COALESCE(notes, ''), created_at, updated_at
 		 FROM orders WHERE branch_id = $1 ORDER BY created_at DESC LIMIT $2 OFFSET $3`, branchID, limit, offset,
 	)
 	if err != nil {
@@ -96,7 +119,7 @@ func (r *OrderRepo) ListByBranchID(branchID string, page, limit int) ([]domain.O
 	for rows.Next() {
 		var o domain.Order
 		if err := rows.Scan(&o.ID, &o.ChainID, &o.BranchID, &o.TableID, &o.CustomerID, &o.GuestID, &o.CustomerName,
-			&o.OrderType, &o.Status, &o.PaymentStatus, &o.PaymentMethod, &o.TotalAmount, &o.CreatedAt, &o.UpdatedAt); err != nil {
+			&o.OrderType, &o.Status, &o.PaymentStatus, &o.PaymentMethod, &o.TotalAmount, &o.Notes, &o.CreatedAt, &o.UpdatedAt); err != nil {
 			return nil, 0, err
 		}
 		orders = append(orders, o)
@@ -118,7 +141,7 @@ func (r *OrderRepo) ListByChainID(chainID string, page, limit int) ([]domain.Ord
 		        COALESCE(guest_id, '') as guest_id,
 		        COALESCE(customer_name, '') as customer_name,
 		        order_type, status, payment_status, payment_method,
-		        total_amount, created_at, updated_at
+		        total_amount, COALESCE(notes, ''), created_at, updated_at
 		 FROM orders WHERE chain_id = $1 ORDER BY created_at DESC LIMIT $2 OFFSET $3`, chainID, limit, offset,
 	)
 	if err != nil {
@@ -130,7 +153,7 @@ func (r *OrderRepo) ListByChainID(chainID string, page, limit int) ([]domain.Ord
 	for rows.Next() {
 		var o domain.Order
 		if err := rows.Scan(&o.ID, &o.ChainID, &o.BranchID, &o.TableID, &o.CustomerID, &o.GuestID, &o.CustomerName,
-			&o.OrderType, &o.Status, &o.PaymentStatus, &o.PaymentMethod, &o.TotalAmount, &o.CreatedAt, &o.UpdatedAt); err != nil {
+			&o.OrderType, &o.Status, &o.PaymentStatus, &o.PaymentMethod, &o.TotalAmount, &o.Notes, &o.CreatedAt, &o.UpdatedAt); err != nil {
 			return nil, 0, err
 		}
 		orders = append(orders, o)

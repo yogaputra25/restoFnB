@@ -1,92 +1,88 @@
 <template>
   <div class="p-6">
-    <h1 class="text-2xl font-bold text-white mb-6">Carousel Management</h1>
+    <h1 class="font-heading text-[var(--font-size-page-title)] text-[var(--color-text-primary)] mb-6">Carousel Management</h1>
 
-    <form @submit.prevent="addSlide" class="mb-6 p-4 bg-dark-800 rounded-lg max-w-lg space-y-3">
-      <h3 class="text-white font-medium text-sm">Add Carousel Slide</h3>
+    <form @submit.prevent="addSlide" class="mb-6 p-4 bg-[var(--color-surface)] rounded-[var(--radius-card)] shadow-[var(--shadow-sm)] max-w-lg space-y-3">
+      <h3 class="font-heading text-sm font-semibold text-[var(--color-text-primary)]">Add Carousel Slide</h3>
       <div class="grid grid-cols-2 gap-3">
-        <input v-model="newSlide.title" placeholder="Title"
-          class="px-3 py-2 rounded bg-dark-700 text-white border border-dark-500 focus:border-primary-500 outline-none text-sm" />
-        <input v-model.number="newSlide.display_order" type="number" placeholder="Display order"
-          class="px-3 py-2 rounded bg-dark-700 text-white border border-dark-500 focus:border-primary-500 outline-none text-sm" />
+        <AppInput v-model="newSlide.title" placeholder="Title" required floating />
+        <AppInput v-model.number="newSlide.display_order" type="number" placeholder="Display order" floating />
       </div>
-      <input v-model="newSlide.description" placeholder="Description"
-        class="w-full px-3 py-2 rounded bg-dark-700 text-white border border-dark-500 focus:border-primary-500 outline-none text-sm" />
+      <AppInput v-model="newSlide.description" placeholder="Description" floating />
       <div class="flex gap-2 items-start">
         <input type="file" accept="image/png,image/jpeg,image/gif,image/webp" @change="onAddImageSelect"
-          class="flex-1 text-sm text-white file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:bg-primary-500 file:text-white file:text-xs file:font-semibold file:cursor-pointer" />
-        <img v-if="addImagePreview" :src="addImagePreview" class="w-12 h-8 rounded object-cover shrink-0" />
+          class="flex-1 text-sm file:mr-2 file:py-1 file:px-3 file:rounded-[var(--radius-button)] file:border-0 file:bg-[var(--color-primary)] file:text-white file:text-xs file:font-semibold file:cursor-pointer" />
+        <img v-if="addImagePreview" :src="addImagePreview" class="w-12 h-8 rounded-[var(--radius-image)] object-cover shrink-0" />
       </div>
-      <input v-if="!addImagePreview" v-model="newSlide.image_url" placeholder="...or paste Image URL"
-        class="w-full px-3 py-2 rounded bg-dark-700 text-white border border-dark-500 focus:border-primary-500 outline-none text-sm" />
+      <AppInput v-if="!addImagePreview" v-model="newSlide.image_url" placeholder="...or paste Image URL" floating />
       <div class="flex gap-3">
-        <label class="flex items-center gap-2 text-sm text-white">
-          <input v-model="newSlide.is_active" type="checkbox" class="accent-primary-500" />
+        <label class="flex items-center gap-2 text-sm text-[var(--color-text-primary)]">
+          <input v-model="newSlide.is_active" type="checkbox" class="accent-[var(--color-primary)]" />
           Active
         </label>
-        <input v-model="newSlide.bg_color" placeholder="~or bg color (e.g. #FF6B00)"
-          class="flex-1 px-3 py-2 rounded bg-dark-700 text-white border border-dark-500 focus:border-primary-500 outline-none text-sm" />
+        <AppInput v-model="newSlide.bg_color" placeholder="~or bg color (e.g. #FF6B00)" floating />
       </div>
-      <button type="submit" class="w-full py-2 bg-primary-500 text-white rounded hover:bg-primary-600 text-sm font-semibold">
+      <AppButton variant="primary" size="sm" class="w-full" type="submit">
         Add Slide
-      </button>
+      </AppButton>
     </form>
 
-    <div class="space-y-3 max-w-lg">
+    <div v-if="loading" class="space-y-3 max-w-lg">
+      <AppSkeleton v-for="i in 3" :key="i" variant="card" />
+    </div>
+
+    <div v-else-if="slides.length === 0" class="max-w-lg">
+      <AppEmptyState title="No Carousel Slides" description="Add your first carousel slide to get started." />
+    </div>
+
+    <div v-else class="space-y-3 max-w-lg">
       <div v-for="slide in slides" :key="slide.id"
-        class="bg-dark-700 px-4 py-3 rounded flex items-center justify-between gap-4">
+        class="bg-[var(--color-surface)] px-4 py-3 rounded-[var(--radius-card)] shadow-[var(--shadow-sm)] flex items-center justify-between gap-4 transition-all hover:-translate-y-1 hover:shadow-[var(--shadow-md)]">
         <div class="flex items-center gap-3 flex-1 min-w-0">
-          <img v-if="slide.image_url" :src="slide.image_url" class="w-12 h-8 rounded object-cover shrink-0" />
+          <img v-if="slide.image_url" :src="slide.image_url" class="w-12 h-8 rounded-[var(--radius-image)] object-cover shrink-0" />
           <div class="min-w-0">
             <div class="flex items-center gap-2">
-              <span class="text-white font-medium text-sm">{{ slide.title }}</span>
-              <span :class="['text-xs px-1.5 py-0.5 rounded', slide.is_active ? 'bg-green-900 text-green-300' : 'bg-red-900 text-red-300']">
-                {{ slide.is_active ? 'Active' : 'Inactive' }}
-              </span>
+              <span class="text-[var(--color-text-primary)] font-medium text-sm">{{ slide.title }}</span>
+              <StatusBadge :status="slide.is_active ? 'active' : 'inactive'" variant="generic" />
             </div>
-            <div class="text-dark-400 text-xs truncate">
+            <div class="text-[var(--color-text-secondary)] text-xs truncate">
               {{ slide.description || 'No description' }} &middot; Order: {{ slide.display_order }}
             </div>
           </div>
         </div>
         <div class="flex gap-2 shrink-0">
-          <button @click="startEditSlide(slide)" class="text-blue-400 text-sm hover:text-blue-300">Edit</button>
-          <button @click="deleteSlide(slide.id)" class="text-red-400 text-sm hover:text-red-300">Delete</button>
+          <button @click="startEditSlide(slide)" class="text-[var(--color-primary)] text-sm hover:underline">Edit</button>
+          <button @click="deleteSlide(slide.id)" class="text-[var(--color-danger)] text-sm hover:underline">Delete</button>
         </div>
       </div>
-      <p v-if="slides.length === 0" class="text-dark-400 text-sm">No carousel slides yet.</p>
     </div>
 
     <Teleport to="body">
-      <div v-if="editModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60" @click.self="editModal = false">
-        <div class="bg-dark-800 rounded-lg p-6 w-full max-w-md mx-4 space-y-3">
-          <h3 class="text-white font-semibold">Edit Carousel Slide</h3>
+      <div v-if="editModal" class="fixed inset-0 z-50 flex items-center justify-center">
+        <div class="absolute inset-0 bg-black/40" @click="editModal = false" />
+        <div class="relative bg-[var(--color-surface)] rounded-[var(--radius-card)] shadow-[var(--shadow-lg)] p-6 w-full max-w-md mx-4 space-y-3">
+          <h3 class="font-heading text-[var(--font-size-section)] text-[var(--color-text-primary)]">Edit Carousel Slide</h3>
           <div class="grid grid-cols-2 gap-3">
-            <input v-model="editForm.title" placeholder="Title"
-              class="px-3 py-2 rounded bg-dark-700 text-white border border-dark-500 focus:border-primary-500 outline-none text-sm" />
-            <input v-model.number="editForm.display_order" type="number" placeholder="Display order"
-              class="px-3 py-2 rounded bg-dark-700 text-white border border-dark-500 focus:border-primary-500 outline-none text-sm" />
+            <AppInput v-model="editForm.title" placeholder="Title" required floating />
+            <AppInput v-model.number="editForm.display_order" type="number" placeholder="Display order" floating />
           </div>
-          <input v-model="editForm.description" placeholder="Description"
-            class="w-full px-3 py-2 rounded bg-dark-700 text-white border border-dark-500 focus:border-primary-500 outline-none text-sm" />
+          <AppInput v-model="editForm.description" placeholder="Description" floating />
           <div class="flex gap-2 items-start">
             <input type="file" accept="image/png,image/jpeg,image/gif,image/webp" @change="onEditImageSelect"
-              class="flex-1 text-sm text-white file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:bg-primary-500 file:text-white file:text-xs file:font-semibold file:cursor-pointer" />
-            <img v-if="editImagePreview" :src="editImagePreview" class="w-12 h-8 rounded object-cover shrink-0" />
+              class="flex-1 text-sm file:mr-2 file:py-1 file:px-3 file:rounded-[var(--radius-button)] file:border-0 file:bg-[var(--color-primary)] file:text-white file:text-xs file:font-semibold file:cursor-pointer" />
+            <img v-if="editImagePreview" :src="editImagePreview" class="w-12 h-8 rounded-[var(--radius-image)] object-cover shrink-0" />
           </div>
-          <input v-if="!editFileSelected" v-model="editForm.image_url" placeholder="Image URL"
-            class="w-full px-3 py-2 rounded bg-dark-700 text-white border border-dark-500 focus:border-primary-500 outline-none text-sm" />
+          <AppInput v-if="!editFileSelected" v-model="editForm.image_url" placeholder="Image URL" floating />
           <div class="flex gap-3">
-            <label class="flex items-center gap-2 text-sm text-white">
-              <input v-model="editForm.is_active" type="checkbox" class="accent-primary-500" />
+            <label class="flex items-center gap-2 text-sm text-[var(--color-text-primary)]">
+              <input v-model="editForm.is_active" type="checkbox" class="accent-[var(--color-primary)]" />
               Active
             </label>
-            <input v-model="editForm.bg_color" placeholder="~or bg color"
-              class="flex-1 px-3 py-2 rounded bg-dark-700 text-white border border-dark-500 focus:border-primary-500 outline-none text-sm" />
+            <AppInput v-model="editForm.bg_color" placeholder="~or bg color" floating />
           </div>
           <div class="flex gap-2 pt-2">
-            <button @click="saveSlide" class="flex-1 py-2 bg-primary-500 text-white rounded hover:bg-primary-600 text-sm font-semibold">Save</button>
-            <button @click="editModal = false" class="flex-1 py-2 bg-dark-500 text-white rounded hover:bg-dark-400 text-sm">Cancel</button>
+            <AppButton variant="primary" class="flex-1" @click="saveSlide">Save</AppButton>
+            <AppButton variant="secondary" class="flex-1" @click="editModal = false">Cancel</AppButton>
           </div>
         </div>
       </div>
@@ -112,6 +108,7 @@ const auth = useAuthStore()
 const toast = useToast()
 
 const slides = ref<CarouselSlide[]>([])
+const loading = ref(false)
 const newSlide = ref({ title: '', description: '', image_url: '', bg_color: '', display_order: 0, is_active: true })
 const editModal = ref(false)
 const editForm = ref<CarouselSlide>({ id: '', title: '', description: '', image_url: '', bg_color: '', display_order: 0, is_active: true })
@@ -152,12 +149,14 @@ function onEditImageSelect(e: Event) {
 }
 
 async function fetchSlides() {
+  loading.value = true
   try {
     const res = await $api('/api/admin/carousel/list')
     slides.value = (res as any).data || []
   } catch (e: any) {
     toast.show(e?.data?.message || 'Failed to load slides')
   }
+  loading.value = false
 }
 
 async function addSlide() {

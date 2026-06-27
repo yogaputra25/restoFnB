@@ -19,6 +19,7 @@ type UserRepo interface {
 	GetByID(id string) (*domain.User, error)
 	ListByChainID(chainID string) ([]domain.User, error)
 	Deactivate(id string) error
+	Activate(id string) error
 	SaveRefreshToken(token *domain.RefreshToken) error
 }
 
@@ -144,6 +145,14 @@ func (uc *Usecase) DeactivateStaff(id string) error {
 	return uc.userRepo.Deactivate(id)
 }
 
+func (uc *Usecase) ReactivateStaff(id string) error {
+	_, err := uc.userRepo.GetByID(id)
+	if err != nil {
+		return fmt.Errorf("user not found")
+	}
+	return uc.userRepo.Activate(id)
+}
+
 func (uc *Usecase) generateAccessToken(user *domain.User) (string, error) {
 	claims := jwt.MapClaims{
 		"sub":   user.ID,
@@ -152,6 +161,9 @@ func (uc *Usecase) generateAccessToken(user *domain.User) (string, error) {
 		"chain": user.ChainID,
 		"exp":   time.Now().Add(15 * time.Minute).Unix(),
 		"iat":   time.Now().Unix(),
+	}
+	if user.BranchID != nil {
+		claims["branch"] = *user.BranchID
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	return token.SignedString([]byte(uc.jwtSecret))

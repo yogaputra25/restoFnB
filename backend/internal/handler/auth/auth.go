@@ -34,6 +34,7 @@ type AuthService interface {
 	GetProfile(userID string) (*domain.User, error)
 	ListStaff(chainID string) ([]domain.User, error)
 	DeactivateStaff(id string) error
+	ReactivateStaff(id string) error
 }
 
 type Handler struct {
@@ -167,4 +168,24 @@ func (h *Handler) DeactivateStaff(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response.Success(w, map[string]string{"status": "deactivated"})
+}
+
+func (h *Handler) ReactivateStaff(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		response.Error(w, http.StatusMethodNotAllowed, "method not allowed")
+		return
+	}
+
+	id := r.URL.Query().Get("id")
+	if id == "" {
+		response.Error(w, http.StatusBadRequest, "id is required")
+		return
+	}
+
+	if err := h.svc.ReactivateStaff(id); err != nil {
+		response.Error(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	response.Success(w, map[string]string{"status": "reactivated"})
 }

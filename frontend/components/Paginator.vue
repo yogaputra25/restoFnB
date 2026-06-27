@@ -3,19 +3,19 @@
     <button
       @click="$emit('page-change', currentPage - 1)"
       :disabled="currentPage <= 1"
-      class="px-3 py-1.5 rounded text-sm transition"
-      :class="currentPage <= 1 ? 'bg-dark-700 text-dark-500 cursor-not-allowed' : 'bg-dark-700 text-dark-300 hover:bg-dark-600 hover:text-white'"
+      class="px-3 py-1.5 rounded-[var(--radius-button)] text-sm transition-all duration-[var(--transition-base)] hover:scale-[1.03]"
+      :class="currentPage <= 1 ? 'bg-[var(--color-surface-secondary)] text-[var(--color-border)] cursor-not-allowed' : 'bg-[var(--color-surface-secondary)] text-[var(--color-text-secondary)] hover:bg-[var(--color-border)] hover:text-[var(--color-text-primary)]'"
     >Prev</button>
 
-    <span class="text-dark-300 text-sm">
+    <span class="text-[var(--color-text-secondary)] text-sm">
       Page {{ currentPage }} of {{ totalPages }}
     </span>
 
     <button
       @click="$emit('page-change', currentPage + 1)"
       :disabled="currentPage >= totalPages"
-      class="px-3 py-1.5 rounded text-sm transition"
-      :class="currentPage >= totalPages ? 'bg-dark-700 text-dark-500 cursor-not-allowed' : 'bg-dark-700 text-dark-300 hover:bg-dark-600 hover:text-white'"
+      class="px-3 py-1.5 rounded-[var(--radius-button)] text-sm transition-all duration-[var(--transition-base)] hover:scale-[1.03]"
+      :class="currentPage >= totalPages ? 'bg-[var(--color-surface-secondary)] text-[var(--color-border)] cursor-not-allowed' : 'bg-[var(--color-surface-secondary)] text-[var(--color-text-secondary)] hover:bg-[var(--color-border)] hover:text-[var(--color-text-primary)]'"
     >Next</button>
   </div>
 </template>

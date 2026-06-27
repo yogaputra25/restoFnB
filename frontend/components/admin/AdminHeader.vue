@@ -4,9 +4,7 @@
       <!-- Left: hamburger + breadcrumb -->
       <div class="flex items-center gap-4">
         <button class="lg:hidden p-2 rounded-full hover:bg-[var(--color-surface-secondary)] transition-colors" @click="$emit('toggleMobile')">
-          <svg class="w-5 h-5 text-[var(--color-text-primary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
-          </svg>
+          <Menu class="w-5 h-5 text-[var(--color-text-primary)]" />
         </button>
         <div class="hidden sm:flex items-center gap-2 text-sm text-[var(--color-text-secondary)]">
           <span v-for="(crumb, i) in breadcrumbs" :key="i">
@@ -22,34 +20,38 @@
         <!-- Current Date -->
         <span class="hidden xl:block text-xs text-[var(--color-text-secondary)] font-mono">{{ currentDate }}</span>
 
-        <!-- Branch selector (UI only) -->
-        <div class="hidden md:flex items-center gap-1.5 text-sm text-[var(--color-text-secondary)] bg-[var(--color-surface-secondary)] px-3 py-1.5 rounded-[var(--radius-button)]">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-          </svg>
-          <span>All Branches</span>
+        <!-- Branch selector (admin only — cashier auto-assigned) -->
+        <div v-if="auth.isAdmin" class="hidden md:flex items-center gap-1.5 text-sm bg-[var(--color-surface-secondary)] px-3 py-1.5 rounded-[var(--radius-button)]">
+          <Building2 class="w-4 h-4 text-[var(--color-text-secondary)]" />
+          <select
+            :value="selectedBranchId || ''"
+            @change="setBranch(($event.target as HTMLSelectElement).value || null)"
+            class="bg-transparent text-[var(--color-text-primary)] outline-none text-sm max-w-[160px] cursor-pointer"
+          >
+            <option value="">All Branches</option>
+            <option v-for="b in branches" :key="b.id" :value="b.id">{{ b.name }}</option>
+          </select>
+        </div>
+        <!-- Branch label for cashier (read-only) -->
+        <div v-else-if="auth.isCashier && auth.user?.branchId" class="hidden md:flex items-center gap-1.5 text-sm text-[var(--color-text-secondary)] bg-[var(--color-surface-secondary)] px-3 py-1.5 rounded-[var(--radius-button)]">
+          <Building2 class="w-4 h-4" />
+          <span>{{ getBranchName(auth.user.branchId) }}</span>
         </div>
 
         <!-- Search (UI only) -->
         <button class="p-2 rounded-full hover:bg-[var(--color-surface-secondary)] transition-colors">
-          <svg class="w-5 h-5 text-[var(--color-text-secondary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-          </svg>
+          <Search class="w-5 h-5 text-[var(--color-text-secondary)]" />
         </button>
 
         <!-- Notifications (UI only) -->
         <button class="relative p-2 rounded-full hover:bg-[var(--color-surface-secondary)] transition-colors">
-          <svg class="w-5 h-5 text-[var(--color-text-secondary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-          </svg>
+          <Bell class="w-5 h-5 text-[var(--color-text-secondary)]" />
           <span class="absolute top-1 right-1 w-2 h-2 rounded-full bg-[var(--color-danger)]" />
         </button>
 
         <!-- Dark mode toggle (UI only) -->
         <button class="hidden md:flex p-2 rounded-full hover:bg-[var(--color-surface-secondary)] transition-colors">
-          <svg class="w-5 h-5 text-[var(--color-text-secondary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
-          </svg>
+          <Moon class="w-5 h-5 text-[var(--color-text-secondary)]" />
         </button>
 
         <!-- Profile dropdown -->
@@ -71,7 +73,7 @@
                 <p class="text-xs text-[var(--color-text-secondary)]">{{ auth.user?.email }}</p>
               </div>
               <button class="w-full text-left px-4 py-2 text-sm text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-secondary)] transition-colors flex items-center gap-2" @click="handleLogout">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
+                <LogOut class="w-4 h-4" />
                 Logout
               </button>
             </div>
@@ -83,9 +85,12 @@
 </template>
 
 <script setup lang="ts">
+import { Menu, Building2, Search, Bell, Moon, LogOut } from 'lucide-vue-next'
+
 const auth = useAuthStore()
 const router = useRouter()
 const route = useRoute()
+const { selectedBranchId, branches, setBranch, fetchBranches } = useBranchSelector()
 
 const profileOpen = ref(false)
 
@@ -110,6 +115,7 @@ const breadcrumbs = computed(() => {
 
 const currentDate = ref('')
 onMounted(() => {
+  fetchBranches()
   const d = new Date()
   currentDate.value = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })
 })

@@ -45,8 +45,9 @@
               :category="cat.name"
               :price="'Rp' + formatPrice(item.price)"
               :show-add-to-cart="!getCartItem(item.id)"
+              :variants="getVariants(item.id)"
               shadow
-              @add-to-cart="addItem(item)"
+              @add-to-cart="(variantId?: string) => addItem(item, { variant_id: variantId, variant_name: getVariants(item.id).find(v => v.id === variantId)?.name })"
             />
           </div>
 
@@ -80,15 +81,12 @@
       <div
         v-if="itemCount > 0"
         @click="isCartOpen = true"
-        class="lg:hidden fixed bottom-0 left-0 right-0 bg-[var(--color-surface)] border-t border-[var(--color-border)] shadow-[0_-4px_12px_rgba(0,0,0,0.08)] flex items-center px-3 sm:px-4 md:px-6 py-2.5 sm:py-3 gap-2 sm:gap-3 z-40 cursor-pointer active:bg-[var(--color-surface-secondary)] transition-colors"
+        class="lg:hidden fixed bottom-0 left-0 right-0 bg-[var(--color-surface)] border-t border-[var(--color-border)] shadow-[var(--shadow-md)] flex items-center px-3 sm:px-4 md:px-6 py-2.5 sm:py-3 gap-2 sm:gap-3 z-40 cursor-pointer active:bg-[var(--color-surface-secondary)] transition-colors"
       >
         <div class="flex items-center gap-1.5 sm:gap-2 flex-shrink-0 min-w-0">
           <div :class="['w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center transition-colors shrink-0',
             isFabPulsing ? 'bg-[var(--color-primary)] scale-110' : 'bg-[var(--color-primary)]']">
-            <svg class="w-4 h-4 sm:w-5 sm:h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 100 4 2 2 0 000-4z" />
-            </svg>
+            <ShoppingCart class="w-4 h-4 sm:w-5 sm:h-5 text-white" />
           </div>
           <span class="font-bold text-xs sm:text-sm text-[var(--color-text-primary)] truncate">{{ itemCount }} item</span>
         </div>
@@ -102,6 +100,7 @@
 </template>
 
 <script setup lang="ts">
+import { ShoppingCart } from 'lucide-vue-next'
 import { unref } from 'vue'
 import { useCart } from '~/composables/useCart'
 import type { CartItem } from '~/composables/useCart'
@@ -109,6 +108,7 @@ import type { Promo } from '~/components/PromoCarousel.vue'
 
 interface Category { id: string; name: string }
 interface MenuItem { id: string; category_id: string; name: string; description: string; price: number; image_url?: string }
+interface Variant { id: string; menu_item_id: string; name: string; price_adjustment?: number }
 
 const promos = ref<Promo[]>([])
 const loading = ref(true)
@@ -117,6 +117,7 @@ const route = useRoute()
 const chainId = (route.query.chain_id as string) || ''
 const categories = ref<Category[]>([])
 const items = ref<MenuItem[]>([])
+const variants = ref<Variant[]>([])
 const isCartOpen = ref(false)
 const isFabPulsing = ref(false)
 
@@ -151,6 +152,22 @@ async function fetchData() {
     bgColor: s.bg_color ? `bg-gradient-to-r ${s.bg_color}` : undefined,
   }))
   loading.value = false
+
+  // Fetch variants for all items
+  fetchAllVariants()
+}
+
+async function fetchAllVariants() {
+  const results = await Promise.all(items.value.map(item =>
+    $fetch(`/api/variants/list?menu_item_id=${item.id}`)
+      .then(res => ((res as any).data || []).map((v: any) => ({ ...v, menu_item_id: item.id })))
+      .catch(() => [] as Variant[])
+  ))
+  variants.value = results.flat()
+}
+
+function getVariants(itemId: string): Variant[] {
+  return variants.value.filter(v => v.menu_item_id === itemId)
 }
 
 function getItemsByCategory(categoryId: string) {

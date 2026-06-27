@@ -13,7 +13,7 @@
             <button
               v-for="cat in categories"
               :key="cat.id"
-              class="w-full text-left px-3 py-2 rounded-lg text-sm transition-all"
+              class="w-full text-left px-3 py-2 rounded-[var(--radius-button)] text-sm transition-all"
               :class="selectedCategory === cat.id ? 'bg-[var(--color-primary)]/5 text-[var(--color-primary)] font-medium' : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-secondary)]'"
               @click="selectedCategory = cat.id"
             >
@@ -34,9 +34,7 @@
         <PageToolbar>
           <template #left>
             <div class="relative flex-1 max-w-xs">
-              <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-text-secondary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
+              <Search class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-text-secondary)]" />
               <input v-model="searchQuery" type="text" placeholder="Search menu items..." class="w-full pl-9 pr-4 py-2 rounded-[var(--radius-input)] text-sm bg-[var(--color-surface-secondary)] text-[var(--color-text-primary)] border border-[var(--color-border)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]" />
             </div>
             <select v-model="sortBy" class="px-3 py-2 rounded-[var(--radius-input)] text-sm bg-[var(--color-surface-secondary)] text-[var(--color-text-primary)] border border-[var(--color-border)] focus:outline-none">
@@ -46,7 +44,7 @@
           </template>
           <template #right>
             <AppButton variant="primary" size="sm" @click="openAddDrawer()">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
+              <Plus class="w-4 h-4" />
               Add Menu
             </AppButton>
           </template>
@@ -76,7 +74,9 @@
             <!-- Image -->
             <div class="h-32 bg-[var(--color-surface-secondary)] overflow-hidden">
               <img v-if="item.image_url" :src="item.image_url" :alt="item.name" class="w-full h-full object-cover" loading="lazy" />
-              <div v-else class="w-full h-full flex items-center justify-center text-3xl text-[var(--color-border)]">🍽</div>
+              <div v-else class="w-full h-full flex items-center justify-center text-3xl text-[var(--color-border)]">
+                <UtensilsCrossed class="w-8 h-8" />
+              </div>
             </div>
 
             <!-- Content -->
@@ -132,6 +132,23 @@
           Available
         </label>
 
+        <!-- Variants -->
+        <div v-if="editingItem">
+          <hr class="border-[var(--color-border)] my-2" />
+          <label class="text-xs font-medium text-[var(--color-text-secondary)] block mb-2">Variants (optional)</label>
+          <div v-if="variants.length === 0" class="text-xs text-[var(--color-text-secondary)] mb-2">No variants yet</div>
+          <div v-for="(v, i) in variants" :key="v.id || i" class="flex items-center gap-2 mb-1.5 text-sm">
+            <span class="flex-1 text-[var(--color-text-primary)]">{{ v.name }}</span>
+            <span v-if="v.price_adjustment" class="text-[var(--color-text-secondary)] text-xs">+Rp{{ v.price_adjustment }}</span>
+            <button @click="deleteVariant(v.id)" class="text-[var(--color-danger)] text-xs hover:underline">Delete</button>
+          </div>
+          <div class="flex gap-2 items-center mt-2">
+            <input v-model="variantForm.name" placeholder="Variant name (e.g. Level 1)" class="flex-1 px-2.5 py-1.5 rounded-[var(--radius-input)] text-xs bg-[var(--color-surface-secondary)] text-[var(--color-text-primary)] border border-[var(--color-border)] focus:outline-none focus:ring-1 focus:ring-[var(--color-primary)]" />
+            <input v-model.number="variantForm.price_adjustment" type="number" placeholder="+Price" class="w-20 px-2 py-1.5 rounded-[var(--radius-input)] text-xs bg-[var(--color-surface-secondary)] text-[var(--color-text-primary)] border border-[var(--color-border)] focus:outline-none focus:ring-1 focus:ring-[var(--color-primary)]" />
+            <AppButton variant="primary" size="sm" @click="addVariant">Add</AppButton>
+          </div>
+        </div>
+
         <div v-if="formError" class="text-xs text-[var(--color-danger)]">{{ formError }}</div>
 
         <div class="flex gap-3 pt-2">
@@ -157,6 +174,7 @@
 </template>
 
 <script setup lang="ts">
+import { Search, Plus, UtensilsCrossed } from 'lucide-vue-next'
 definePageMeta({ layout: 'admin', middleware: 'auth' })
 
 interface Category { id: string; name: string; description?: string }
@@ -181,6 +199,42 @@ const selectedFile = ref<File | null>(null)
 const imagePreview = ref('')
 const saving = ref(false)
 const formError = ref('')
+
+// Variants
+interface Variant { id: string; menu_item_id?: string; name: string; price_adjustment: number }
+const variants = ref<Variant[]>([])
+const variantForm = reactive({ name: '', price_adjustment: 0 })
+
+async function addVariant() {
+  if (!variantForm.name || !editingItem.value) return
+  try {
+    await $api('/api/admin/variants', {
+      method: 'POST',
+      body: { menu_item_id: editingItem.value.id, name: variantForm.name, price_adjustment: Number(variantForm.price_adjustment) || 0 },
+    })
+    variantForm.name = ''
+    variantForm.price_adjustment = 0
+    await fetchVariants(editingItem.value.id)
+  } catch (e: any) {
+    toast.show(e?.data?.message || 'Failed to add variant')
+  }
+}
+
+async function deleteVariant(id: string) {
+  try {
+    await $api('/api/admin/variants/delete', { method: 'POST', body: { id } })
+    if (editingItem.value) await fetchVariants(editingItem.value.id)
+  } catch (e: any) {
+    toast.show(e?.data?.message || 'Failed to delete variant')
+  }
+}
+
+async function fetchVariants(menuItemId: string) {
+  try {
+    const res = await $api(`/api/admin/variants/list?menu_item_id=${menuItemId}`)
+    variants.value = (res as any).data || []
+  } catch { variants.value = [] }
+}
 
 // Delete
 const deleteModalOpen = ref(false)
@@ -245,6 +299,7 @@ function openAddDrawer() {
   selectedFile.value = null
   imagePreview.value = ''
   formError.value = ''
+  variants.value = []
   drawerOpen.value = true
 }
 
@@ -260,11 +315,13 @@ function openEditDrawer(item: MenuItem) {
   imagePreview.value = ''
   formError.value = ''
   drawerOpen.value = true
+  fetchVariants(item.id)
 }
 
 function closeDrawer() {
   drawerOpen.value = false
   editingItem.value = null
+  variants.value = []
 }
 
 async function saveItem() {

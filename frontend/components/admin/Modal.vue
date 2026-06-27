@@ -56,7 +56,7 @@ function cancel() { emit('cancel') }
 onMounted(() => {
   const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') cancel() }
   document.addEventListener('keydown', handler)
-  onDestroy(() => document.removeEventListener('keydown', handler))
+  onUnmounted(() => document.removeEventListener('keydown', handler))
 })
 </script>
 

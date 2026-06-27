@@ -4,6 +4,8 @@ export interface CartItem {
   price: number
   quantity: number
   image_url?: string
+  variant_id?: string
+  variant_name?: string
 }
 
 const items = ref<CartItem[]>([])
@@ -17,17 +19,19 @@ const itemCount = computed(() =>
 )
 
 export function useCart() {
-  function addItem(menuItem: { id: string; name: string; price: number; image_url?: string }) {
-    const existing = items.value.find(i => i.id === menuItem.id)
+  function addItem(menuItem: { id: string; name: string; price: number; image_url?: string }, opts?: { variant_id?: string; variant_name?: string }) {
+    const existing = items.value.find(i => i.id === menuItem.id && i.variant_id === (opts?.variant_id || undefined))
     if (existing) {
       existing.quantity++
     } else {
       items.value.push({
         id: menuItem.id,
-        name: menuItem.name,
+        name: menuItem.name + (opts?.variant_name ? ` (${opts.variant_name})` : ''),
         price: menuItem.price,
         quantity: 1,
         image_url: menuItem.image_url,
+        variant_id: opts?.variant_id,
+        variant_name: opts?.variant_name,
       })
     }
   }

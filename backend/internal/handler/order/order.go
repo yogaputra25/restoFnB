@@ -10,7 +10,7 @@ import (
 )
 
 type OrderService interface {
-	Create(chainID, branchID, orderType string, tableID, customerID, guestID *string, customerName string, items []domain.OrderItem) (*domain.Order, error)
+	Create(chainID, branchID, orderType string, tableID, customerID, guestID *string, customerName, notes string, items []domain.OrderItem) (*domain.Order, error)
 	UpdateStatus(id, status string) (*domain.Order, error)
 	Pay(id, method string) (*domain.Order, error)
 	ListByBranchID(branchID string, page, limit int) ([]domain.Order, int, error)
@@ -31,11 +31,13 @@ type createRequest struct {
 	TableID      *string             `json:"table_id,omitempty"`
 	OrderType    string              `json:"order_type"`
 	CustomerName string              `json:"customer_name,omitempty"`
+	Notes        string              `json:"notes,omitempty"`
 	Items        []orderItemRequest  `json:"items"`
 }
 
 type orderItemRequest struct {
 	MenuItemID string  `json:"menu_item_id"`
+	VariantID  *string `json:"variant_id,omitempty"`
 	Quantity   int     `json:"quantity"`
 	UnitPrice  float64 `json:"unit_price"`
 }
@@ -65,12 +67,13 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 	for _, ir := range req.Items {
 		items = append(items, domain.OrderItem{
 			MenuItemID: ir.MenuItemID,
+			VariantID:  ir.VariantID,
 			Quantity:   ir.Quantity,
 			UnitPrice:  ir.UnitPrice,
 		})
 	}
 
-	order, err := h.svc.Create(req.ChainID, req.BranchID, req.OrderType, req.TableID, nil, nil, req.CustomerName, items)
+	order, err := h.svc.Create(req.ChainID, req.BranchID, req.OrderType, req.TableID, nil, nil, req.CustomerName, req.Notes, items)
 	if err != nil {
 		response.Error(w, http.StatusInternalServerError, err.Error())
 		return

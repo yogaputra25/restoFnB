@@ -105,6 +105,7 @@ func main() {
 	mux.Handle("/api/admin/themes/get", authMw(http.HandlerFunc(themeHandler.Get)))
 	mux.Handle("/api/admin/staff/list", authMw(adminMw(http.HandlerFunc(authHandler.ListStaff))))
 	mux.Handle("/api/admin/staff/deactivate", authMw(adminMw(http.HandlerFunc(authHandler.DeactivateStaff))))
+		mux.Handle("/api/admin/staff/reactivate", authMw(adminMw(http.HandlerFunc(authHandler.ReactivateStaff))))
 
 	mux.Handle("/api/admin/categories/list", authMw(http.HandlerFunc(categoryHandler.List)))
 	mux.Handle("/api/admin/categories/delete", authMw(adminMw(http.HandlerFunc(categoryHandler.Delete))))
@@ -116,6 +117,7 @@ func main() {
 	mux.Handle("/api/admin/menu-items", authMw(adminMw(http.HandlerFunc(menuItemHandler.Create))))
 	mux.Handle("/api/admin/variants", authMw(adminMw(http.HandlerFunc(variantHandler.Create))))
 	mux.Handle("/api/admin/variants/list", authMw(http.HandlerFunc(variantHandler.List)))
+		mux.Handle("/api/admin/variants/delete", authMw(adminMw(http.HandlerFunc(variantHandler.Delete))))
 	mux.Handle("/api/admin/availability", authMw(adminMw(http.HandlerFunc(availabilityHandler.Set))))
 	mux.Handle("/api/admin/availability/list", authMw(http.HandlerFunc(availabilityHandler.Get)))
 
@@ -135,6 +137,7 @@ func main() {
 
 	mux.HandleFunc("/api/categories/list", categoryHandler.List)
 	mux.HandleFunc("/api/menu-items/list", menuItemHandler.ListPublic)
+	mux.HandleFunc("/api/variants/list", variantHandler.List)
 
 	mux.HandleFunc("/api/orders", orderHandler.Create)
 	mux.Handle("/api/orders/status", authMw(cashierMw(http.HandlerFunc(orderHandler.UpdateStatus))))
